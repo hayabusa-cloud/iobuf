@@ -25,24 +25,22 @@ type (
 // and starting address aligned to the memory page size.
 func AlignedMem(size int, pageSize uintptr) []byte {
 	p := make([]byte, uintptr(size)+pageSize-1)
-	ptr := uintptr(unsafe.Pointer(unsafe.SliceData(p)))
-	ptr = ((ptr + pageSize - 1) / pageSize) * pageSize
-	return unsafe.Slice((*byte)(unsafe.Pointer(ptr)), size)
+	base := unsafe.Pointer(unsafe.SliceData(p))
+	offset := ((uintptr(base)+pageSize-1)/pageSize)*pageSize - uintptr(base)
+	return unsafe.Slice((*byte)(unsafe.Add(base, offset)), size)
 }
 
-// AlignedMemBlocks returns n bytes slices that
-// have length with memory page size and address
-// starts from multiple of memory page size
+// AlignedMemBlocks returns n page-aligned byte slices, each of length pageSize.
 func AlignedMemBlocks(n int, pageSize uintptr) (blocks [][]byte) {
 	if n < 1 {
 		panic("bad block num")
 	}
 	blocks = make([][]byte, n)
 	p := make([]byte, int(pageSize)*(n+1))
-	ptr := uintptr(unsafe.Pointer(&p[0]))
-	off := ptr - (ptr & ^(pageSize - 1))
+	base := unsafe.Pointer(unsafe.SliceData(p))
+	offset := ((uintptr(base)+pageSize-1)/pageSize)*pageSize - uintptr(base)
 	for i := range n {
-		blocks[i] = unsafe.Slice(&p[uintptr(i)*pageSize-off], pageSize)
+		blocks[i] = unsafe.Slice((*byte)(unsafe.Add(base, offset+uintptr(i)*pageSize)), pageSize)
 	}
 	return
 }
