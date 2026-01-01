@@ -11,7 +11,7 @@ import (
 	"code.hybscloud.com/iobuf"
 )
 
-const registerBufferSize = iobuf.BufferSizeHuge
+const registerBufferSize = iobuf.BufferSizeLarge
 
 func TestIoVecFromBytesSlice(t *testing.T) {
 	t.Run("empty slice", func(t *testing.T) {
@@ -190,6 +190,28 @@ func TestIoVecFromMediumBuffers(t *testing.T) {
 	})
 }
 
+func TestIoVecFromBigBuffers(t *testing.T) {
+	t.Run("empty slice", func(t *testing.T) {
+		vec := iobuf.IoVecFromBigBuffers(nil)
+		if vec != nil {
+			t.Error("expected nil for empty input")
+		}
+	})
+
+	t.Run("non-empty", func(t *testing.T) {
+		buffers := make([]iobuf.BigBuffer, 2)
+		vec := iobuf.IoVecFromBigBuffers(buffers)
+		if len(vec) != 2 {
+			t.Errorf("expected len=2, got %d", len(vec))
+		}
+		for i, v := range vec {
+			if v.Len != iobuf.BufferSizeBig {
+				t.Errorf("vec[%d].Len = %d, expected %d", i, v.Len, iobuf.BufferSizeBig)
+			}
+		}
+	})
+}
+
 func TestIoVecFromLargeBuffers(t *testing.T) {
 	t.Run("empty slice", func(t *testing.T) {
 		vec := iobuf.IoVecFromLargeBuffers(nil)
@@ -207,6 +229,28 @@ func TestIoVecFromLargeBuffers(t *testing.T) {
 		for i, v := range vec {
 			if v.Len != iobuf.BufferSizeLarge {
 				t.Errorf("vec[%d].Len = %d, expected %d", i, v.Len, iobuf.BufferSizeLarge)
+			}
+		}
+	})
+}
+
+func TestIoVecFromGreatBuffers(t *testing.T) {
+	t.Run("empty slice", func(t *testing.T) {
+		vec := iobuf.IoVecFromGreatBuffers(nil)
+		if vec != nil {
+			t.Error("expected nil for empty input")
+		}
+	})
+
+	t.Run("non-empty", func(t *testing.T) {
+		buffers := make([]iobuf.GreatBuffer, 2)
+		vec := iobuf.IoVecFromGreatBuffers(buffers)
+		if len(vec) != 2 {
+			t.Errorf("expected len=2, got %d", len(vec))
+		}
+		for i, v := range vec {
+			if v.Len != iobuf.BufferSizeGreat {
+				t.Errorf("vec[%d].Len = %d, expected %d", i, v.Len, iobuf.BufferSizeGreat)
 			}
 		}
 	})
@@ -234,6 +278,28 @@ func TestIoVecFromHugeBuffers(t *testing.T) {
 	})
 }
 
+func TestIoVecFromVastBuffers(t *testing.T) {
+	t.Run("empty slice", func(t *testing.T) {
+		vec := iobuf.IoVecFromVastBuffers(nil)
+		if vec != nil {
+			t.Error("expected nil for empty input")
+		}
+	})
+
+	t.Run("non-empty", func(t *testing.T) {
+		buffers := make([]iobuf.VastBuffer, 2)
+		vec := iobuf.IoVecFromVastBuffers(buffers)
+		if len(vec) != 2 {
+			t.Errorf("expected len=2, got %d", len(vec))
+		}
+		for i, v := range vec {
+			if v.Len != iobuf.BufferSizeVast {
+				t.Errorf("vec[%d].Len = %d, expected %d", i, v.Len, iobuf.BufferSizeVast)
+			}
+		}
+	})
+}
+
 func TestIoVecFromGiantBuffers(t *testing.T) {
 	t.Run("empty slice", func(t *testing.T) {
 		vec := iobuf.IoVecFromGiantBuffers(nil)
@@ -252,6 +318,26 @@ func TestIoVecFromGiantBuffers(t *testing.T) {
 			if v.Len != iobuf.BufferSizeGiant {
 				t.Errorf("vec[%d].Len = %d, expected %d", i, v.Len, iobuf.BufferSizeGiant)
 			}
+		}
+	})
+}
+
+func TestIoVecFromTitanBuffers(t *testing.T) {
+	t.Run("empty slice", func(t *testing.T) {
+		vec := iobuf.IoVecFromTitanBuffers(nil)
+		if vec != nil {
+			t.Error("expected nil for empty input")
+		}
+	})
+
+	t.Run("non-empty", func(t *testing.T) {
+		buffers := make([]iobuf.TitanBuffer, 1)
+		vec := iobuf.IoVecFromTitanBuffers(buffers)
+		if len(vec) != 1 {
+			t.Errorf("expected len=1, got %d", len(vec))
+		}
+		if vec[0].Len != iobuf.BufferSizeTitan {
+			t.Errorf("vec[0].Len = %d, expected %d", vec[0].Len, iobuf.BufferSizeTitan)
 		}
 	})
 }
