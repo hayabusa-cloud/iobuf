@@ -24,6 +24,13 @@
 - **零拷贝 IoVec 生成**：用于向量化 I/O 系统调用。
 - **协作式退避**：使用 `iox.Backoff` 优雅处理资源耗尽。
 
+## 系统要求
+
+- **Go 1.25+**
+- **64 位 CPU**（amd64、arm64、riscv64、loong64、ppc64、s390x、mips64 等）
+
+> **注意：** 由于无锁池实现中使用 64 位原子操作，不支持 32 位架构。
+
 ## 安装
 
 ```bash
@@ -79,18 +86,22 @@ addr, n := iobuf.IoVecAddrLen(iovecs)
 
 ## 缓冲区层级
 
-4 的幂次递增，从 16 字节开始：
+4 的幂次递增，从 32 字节开始（12 层，32 B 到 128 MiB）：
 
 | 层级 | 大小 | 用途 |
 |------|------|------|
-| Pico | 16 B | 微型元数据、标志位 |
-| Nano | 64 B | 小型头部、令牌 |
-| Micro | 256 B | 协议头部 |
-| Small | 1 KiB | 小型消息 |
-| Medium | 4 KiB | 页大小 I/O |
-| Large | 16 KiB | 大型传输 |
-| Huge | 64 KiB | 最大 UDP |
-| Giant | 256 KiB | 批量 I/O、大型负载 |
+| Pico | 32 B | UUID、标志、微型控制消息 |
+| Nano | 128 B | HTTP 头部、JSON 令牌、小型 RPC 载荷 |
+| Micro | 512 B | DNS 数据包、MQTT 消息、协议帧 |
+| Small | 2 KiB | WebSocket 帧、小型 HTTP 响应 |
+| Medium | 8 KiB | TCP 分段、gRPC 消息、页 I/O |
+| Big | 32 KiB | TLS 记录（最大 16 KiB）、流块 |
+| Large | 128 KiB | io_uring 缓冲环、批量网络传输 |
+| Great | 512 KiB | 数据库页、大型 API 响应 |
+| Huge | 2 MiB | 大页对齐、内存映射文件 |
+| Vast | 8 MiB | 图像处理、压缩归档 |
+| Giant | 32 MiB | 视频帧、机器学习模型权重 |
+| Titan | 128 MiB | 大型数据集、最大栈安全缓冲区 |
 
 ## API 概览
 
@@ -119,9 +130,13 @@ func NewNanoBufferPool(capacity int) *NanoBufferBoundedPool
 func NewMicroBufferPool(capacity int) *MicroBufferBoundedPool
 func NewSmallBufferPool(capacity int) *SmallBufferBoundedPool
 func NewMediumBufferPool(capacity int) *MediumBufferBoundedPool
+func NewBigBufferPool(capacity int) *BigBufferBoundedPool
 func NewLargeBufferPool(capacity int) *LargeBufferBoundedPool
+func NewGreatBufferPool(capacity int) *GreatBufferBoundedPool
 func NewHugeBufferPool(capacity int) *HugeBufferBoundedPool
+func NewVastBufferPool(capacity int) *VastBufferBoundedPool
 func NewGiantBufferPool(capacity int) *GiantBufferBoundedPool
+func NewTitanBufferPool(capacity int) *TitanBufferBoundedPool
 ```
 
 ### 内存分配

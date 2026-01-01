@@ -24,6 +24,13 @@ Pools de buffers acotados sin bloqueos y eficientes en memoria para Go, optimiza
 - **Generación de IoVec sin copia** para llamadas al sistema de I/O vectorizado.
 - **Retroceso cooperativo**: Usa `iox.Backoff` para manejar el agotamiento de recursos con elegancia.
 
+## Requisitos
+
+- **Go 1.25+**
+- **CPU de 64 bits** (amd64, arm64, riscv64, loong64, ppc64, s390x, mips64, etc.)
+
+> **Nota:** Las arquitecturas de 32 bits no son compatibles debido a las operaciones atómicas de 64 bits en la implementación del pool sin bloqueos.
+
 ## Instalación
 
 ```bash
@@ -79,18 +86,22 @@ addr, n := iobuf.IoVecAddrLen(iovecs)
 
 ## Niveles de Buffer
 
-Progresión de potencias de 4, comenzando en 16 bytes:
+Progresión de potencias de 4, comenzando en 32 bytes (12 niveles, 32 B a 128 MiB):
 
 | Nivel | Tamaño | Caso de Uso |
 |-------|--------|-------------|
-| Pico | 16 B | Metadatos pequeños, flags |
-| Nano | 64 B | Cabeceras pequeñas, tokens |
-| Micro | 256 B | Cabeceras de protocolo |
-| Small | 1 KiB | Mensajes pequeños |
-| Medium | 4 KiB | I/O de tamaño de página |
-| Large | 16 KiB | Transferencias grandes |
-| Huge | 64 KiB | UDP máximo |
-| Giant | 256 KiB | I/O masivo, cargas grandes |
+| Pico | 32 B | UUIDs, flags, mensajes de control pequeños |
+| Nano | 128 B | Cabeceras HTTP, tokens JSON, payloads RPC pequeños |
+| Micro | 512 B | Paquetes DNS, mensajes MQTT, tramas de protocolo |
+| Small | 2 KiB | Frames WebSocket, respuestas HTTP pequeñas |
+| Medium | 8 KiB | Segmentos TCP, mensajes gRPC, I/O de página |
+| Big | 32 KiB | Registros TLS (máx 16 KiB), chunks de stream |
+| Large | 128 KiB | Buffer rings io_uring, transferencias de red masivas |
+| Great | 512 KiB | Páginas de base de datos, respuestas API grandes |
+| Huge | 2 MiB | Alineado a huge pages, archivos mapeados en memoria |
+| Vast | 8 MiB | Procesamiento de imágenes, archivos comprimidos |
+| Giant | 32 MiB | Frames de video, pesos de modelos ML |
+| Titan | 128 MiB | Datasets grandes, buffer máximo seguro para stack |
 
 ## Resumen de API
 
@@ -119,9 +130,13 @@ func NewNanoBufferPool(capacity int) *NanoBufferBoundedPool
 func NewMicroBufferPool(capacity int) *MicroBufferBoundedPool
 func NewSmallBufferPool(capacity int) *SmallBufferBoundedPool
 func NewMediumBufferPool(capacity int) *MediumBufferBoundedPool
+func NewBigBufferPool(capacity int) *BigBufferBoundedPool
 func NewLargeBufferPool(capacity int) *LargeBufferBoundedPool
+func NewGreatBufferPool(capacity int) *GreatBufferBoundedPool
 func NewHugeBufferPool(capacity int) *HugeBufferBoundedPool
+func NewVastBufferPool(capacity int) *VastBufferBoundedPool
 func NewGiantBufferPool(capacity int) *GiantBufferBoundedPool
+func NewTitanBufferPool(capacity int) *TitanBufferBoundedPool
 ```
 
 ### Asignación de Memoria

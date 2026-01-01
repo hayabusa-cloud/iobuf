@@ -24,6 +24,13 @@
 - **ゼロコピーIoVec生成**：ベクトル化I/Oシステムコール用。
 - **協調的バックオフ**：`iox.Backoff` を使用してリソース枯渇を優雅に処理。
 
+## システム要件
+
+- **Go 1.25+**
+- **64ビットCPU**（amd64、arm64、riscv64、loong64、ppc64、s390x、mips64など）
+
+> **注意：** ロックフリープール実装で64ビットアトミック操作を使用しているため、32ビットアーキテクチャはサポートされていません。
+
 ## インストール
 
 ```bash
@@ -79,18 +86,22 @@ addr, n := iobuf.IoVecAddrLen(iovecs)
 
 ## バッファ階層
 
-16バイトから始まる4の累乗で増加：
+32バイトから始まる4の累乗で増加（12階層、32 B から 128 MiB）：
 
 | 階層 | サイズ | 用途 |
 |------|--------|------|
-| Pico | 16 B | 小さなメタデータ、フラグ |
-| Nano | 64 B | 小さなヘッダ、トークン |
-| Micro | 256 B | プロトコルヘッダ |
-| Small | 1 KiB | 小さなメッセージ |
-| Medium | 4 KiB | ページサイズI/O |
-| Large | 16 KiB | 大きな転送 |
-| Huge | 64 KiB | 最大UDP |
-| Giant | 256 KiB | バルクI/O、大きなペイロード |
+| Pico | 32 B | UUID、フラグ、小さな制御メッセージ |
+| Nano | 128 B | HTTPヘッダ、JSONトークン、小さなRPCペイロード |
+| Micro | 512 B | DNSパケット、MQTTメッセージ、プロトコルフレーム |
+| Small | 2 KiB | WebSocketフレーム、小さなHTTPレスポンス |
+| Medium | 8 KiB | TCPセグメント、gRPCメッセージ、ページI/O |
+| Big | 32 KiB | TLSレコード（最大16 KiB）、ストリームチャンク |
+| Large | 128 KiB | io_uringバッファリング、バルクネットワーク転送 |
+| Great | 512 KiB | データベースページ、大規模APIレスポンス |
+| Huge | 2 MiB | ヒュージページ整列、メモリマップファイル |
+| Vast | 8 MiB | 画像処理、圧縮アーカイブ |
+| Giant | 32 MiB | ビデオフレーム、MLモデル重み |
+| Titan | 128 MiB | 大規模データセット、最大スタック安全バッファ |
 
 ## API概要
 
@@ -119,9 +130,13 @@ func NewNanoBufferPool(capacity int) *NanoBufferBoundedPool
 func NewMicroBufferPool(capacity int) *MicroBufferBoundedPool
 func NewSmallBufferPool(capacity int) *SmallBufferBoundedPool
 func NewMediumBufferPool(capacity int) *MediumBufferBoundedPool
+func NewBigBufferPool(capacity int) *BigBufferBoundedPool
 func NewLargeBufferPool(capacity int) *LargeBufferBoundedPool
+func NewGreatBufferPool(capacity int) *GreatBufferBoundedPool
 func NewHugeBufferPool(capacity int) *HugeBufferBoundedPool
+func NewVastBufferPool(capacity int) *VastBufferBoundedPool
 func NewGiantBufferPool(capacity int) *GiantBufferBoundedPool
+func NewTitanBufferPool(capacity int) *TitanBufferBoundedPool
 ```
 
 ### メモリ割り当て
