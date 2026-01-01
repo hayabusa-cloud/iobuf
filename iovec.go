@@ -10,7 +10,18 @@ import (
 
 // IoVec represents a scatter/gather I/O descriptor compatible with the
 // standard Linux struct iovec. It is used to pass multiple non-contiguous
-// user-space buffers to the kernel in a single vectored I/O system call.
+// user-space buffers to the kernel in a single vectored I/O system call
+// (readv, writev, preadv, pwritev, io_uring operations).
+//
+// Memory layout matches the C struct iovec exactly:
+//
+//	struct iovec {
+//	    void  *iov_base;  // Starting address
+//	    size_t iov_len;   // Number of bytes
+//	};
+//
+// The caller must ensure Base points to valid memory for the lifetime of
+// any I/O operation using this IoVec.
 type IoVec struct {
 	Base *byte  // Starting address of the memory block
 	Len  uint64 // Number of bytes to transfer
@@ -36,7 +47,9 @@ func IoVecFromBytesSlice(iov [][]byte) (addr uintptr, n int) {
 }
 
 // IoVecAddrLen extracts the raw pointer and length from an IoVec slice
-// for direct syscall consumption.
+// for direct syscall consumption (readv, writev, io_uring submission).
+//
+// Returns (0, 0) for empty or nil slices.
 func IoVecAddrLen(vec []IoVec) (addr uintptr, n int) {
 	if len(vec) == 0 {
 		return 0, 0
@@ -110,6 +123,19 @@ func IoVecFromMediumBuffers(buffers []MediumBuffer) []IoVec {
 	return vec
 }
 
+// IoVecFromBigBuffers converts a slice of BigBuffer to an IoVec slice.
+// The returned IoVec elements point directly to the buffer memory without copying.
+func IoVecFromBigBuffers(buffers []BigBuffer) []IoVec {
+	if len(buffers) == 0 {
+		return nil
+	}
+	vec := make([]IoVec, len(buffers))
+	for i := range len(buffers) {
+		vec[i] = IoVec{Base: (*byte)(unsafe.Pointer(&buffers[i])), Len: BufferSizeBig}
+	}
+	return vec
+}
+
 // IoVecFromLargeBuffers converts a slice of LargeBuffer to an IoVec slice.
 // The returned IoVec elements point directly to the buffer memory without copying.
 func IoVecFromLargeBuffers(buffers []LargeBuffer) []IoVec {
@@ -119,6 +145,19 @@ func IoVecFromLargeBuffers(buffers []LargeBuffer) []IoVec {
 	vec := make([]IoVec, len(buffers))
 	for i := range len(buffers) {
 		vec[i] = IoVec{Base: (*byte)(unsafe.Pointer(&buffers[i])), Len: BufferSizeLarge}
+	}
+	return vec
+}
+
+// IoVecFromGreatBuffers converts a slice of GreatBuffer to an IoVec slice.
+// The returned IoVec elements point directly to the buffer memory without copying.
+func IoVecFromGreatBuffers(buffers []GreatBuffer) []IoVec {
+	if len(buffers) == 0 {
+		return nil
+	}
+	vec := make([]IoVec, len(buffers))
+	for i := range len(buffers) {
+		vec[i] = IoVec{Base: (*byte)(unsafe.Pointer(&buffers[i])), Len: BufferSizeGreat}
 	}
 	return vec
 }
@@ -136,6 +175,19 @@ func IoVecFromHugeBuffers(buffers []HugeBuffer) []IoVec {
 	return vec
 }
 
+// IoVecFromVastBuffers converts a slice of VastBuffer to an IoVec slice.
+// The returned IoVec elements point directly to the buffer memory without copying.
+func IoVecFromVastBuffers(buffers []VastBuffer) []IoVec {
+	if len(buffers) == 0 {
+		return nil
+	}
+	vec := make([]IoVec, len(buffers))
+	for i := range len(buffers) {
+		vec[i] = IoVec{Base: (*byte)(unsafe.Pointer(&buffers[i])), Len: BufferSizeVast}
+	}
+	return vec
+}
+
 // IoVecFromGiantBuffers converts a slice of GiantBuffer to an IoVec slice.
 // The returned IoVec elements point directly to the buffer memory without copying.
 func IoVecFromGiantBuffers(buffers []GiantBuffer) []IoVec {
@@ -145,6 +197,19 @@ func IoVecFromGiantBuffers(buffers []GiantBuffer) []IoVec {
 	vec := make([]IoVec, len(buffers))
 	for i := range len(buffers) {
 		vec[i] = IoVec{Base: (*byte)(unsafe.Pointer(&buffers[i])), Len: BufferSizeGiant}
+	}
+	return vec
+}
+
+// IoVecFromTitanBuffers converts a slice of TitanBuffer to an IoVec slice.
+// The returned IoVec elements point directly to the buffer memory without copying.
+func IoVecFromTitanBuffers(buffers []TitanBuffer) []IoVec {
+	if len(buffers) == 0 {
+		return nil
+	}
+	vec := make([]IoVec, len(buffers))
+	for i := range len(buffers) {
+		vec[i] = IoVec{Base: (*byte)(unsafe.Pointer(&buffers[i])), Len: BufferSizeTitan}
 	}
 	return vec
 }

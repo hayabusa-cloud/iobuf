@@ -15,22 +15,30 @@ import (
 )
 
 type (
-	// PicoBufferBoundedPool implements a bounded MPMC pool for 16-byte buffers.
+	// PicoBufferBoundedPool implements a bounded MPMC pool for 32-byte buffers.
 	PicoBufferBoundedPool = BoundedPool[PicoBuffer]
-	// NanoBufferBoundedPool implements a bounded MPMC pool for 64-byte buffers.
+	// NanoBufferBoundedPool implements a bounded MPMC pool for 128-byte buffers.
 	NanoBufferBoundedPool = BoundedPool[NanoBuffer]
-	// MicroBufferBoundedPool implements a bounded MPMC pool for 256-byte buffers.
+	// MicroBufferBoundedPool implements a bounded MPMC pool for 512-byte buffers.
 	MicroBufferBoundedPool = BoundedPool[MicroBuffer]
-	// SmallBufferBoundedPool implements a bounded MPMC pool for 1 KiB buffers.
+	// SmallBufferBoundedPool implements a bounded MPMC pool for 2 KiB buffers.
 	SmallBufferBoundedPool = BoundedPool[SmallBuffer]
-	// MediumBufferBoundedPool implements a bounded MPMC pool for 4 KiB buffers.
+	// MediumBufferBoundedPool implements a bounded MPMC pool for 8 KiB buffers.
 	MediumBufferBoundedPool = BoundedPool[MediumBuffer]
-	// LargeBufferBoundedPool implements a bounded MPMC pool for 16 KiB buffers.
+	// BigBufferBoundedPool implements a bounded MPMC pool for 32 KiB buffers.
+	BigBufferBoundedPool = BoundedPool[BigBuffer]
+	// LargeBufferBoundedPool implements a bounded MPMC pool for 128 KiB buffers.
 	LargeBufferBoundedPool = BoundedPool[LargeBuffer]
-	// HugeBufferBoundedPool implements a bounded MPMC pool for 64 KiB buffers.
+	// GreatBufferBoundedPool implements a bounded MPMC pool for 512 KiB buffers.
+	GreatBufferBoundedPool = BoundedPool[GreatBuffer]
+	// HugeBufferBoundedPool implements a bounded MPMC pool for 2 MiB buffers.
 	HugeBufferBoundedPool = BoundedPool[HugeBuffer]
-	// GiantBufferBoundedPool implements a bounded MPMC pool for 256 KiB buffers.
+	// VastBufferBoundedPool implements a bounded MPMC pool for 8 MiB buffers.
+	VastBufferBoundedPool = BoundedPool[VastBuffer]
+	// GiantBufferBoundedPool implements a bounded MPMC pool for 32 MiB buffers.
 	GiantBufferBoundedPool = BoundedPool[GiantBuffer]
+	// TitanBufferBoundedPool implements a bounded MPMC pool for 128 MiB buffers.
+	TitanBufferBoundedPool = BoundedPool[TitanBuffer]
 )
 
 // NewPicoBufferPool creates a new instance of PicoBufferBoundedPool with the specified capacity.
@@ -63,10 +71,22 @@ func NewMediumBufferPool(capacity int) *MediumBufferBoundedPool {
 	return NewBoundedPool[MediumBuffer](capacity)
 }
 
+// NewBigBufferPool creates a new instance of BigBufferBoundedPool with the specified capacity.
+// The capacity must be between 1 and math.MaxUint32 and will be rounded up to the next power of two.
+func NewBigBufferPool(capacity int) *BigBufferBoundedPool {
+	return NewBoundedPool[BigBuffer](capacity)
+}
+
 // NewLargeBufferPool creates a new instance of LargeBufferBoundedPool with the specified capacity.
 // The capacity must be between 1 and math.MaxUint32 and will be rounded up to the next power of two.
 func NewLargeBufferPool(capacity int) *LargeBufferBoundedPool {
 	return NewBoundedPool[LargeBuffer](capacity)
+}
+
+// NewGreatBufferPool creates a new instance of GreatBufferBoundedPool with the specified capacity.
+// The capacity must be between 1 and math.MaxUint32 and will be rounded up to the next power of two.
+func NewGreatBufferPool(capacity int) *GreatBufferBoundedPool {
+	return NewBoundedPool[GreatBuffer](capacity)
 }
 
 // NewHugeBufferPool creates a new instance of HugeBufferBoundedPool with the specified capacity.
@@ -75,18 +95,38 @@ func NewHugeBufferPool(capacity int) *HugeBufferBoundedPool {
 	return NewBoundedPool[HugeBuffer](capacity)
 }
 
+// NewVastBufferPool creates a new instance of VastBufferBoundedPool with the specified capacity.
+// The capacity must be between 1 and math.MaxUint32 and will be rounded up to the next power of two.
+func NewVastBufferPool(capacity int) *VastBufferBoundedPool {
+	return NewBoundedPool[VastBuffer](capacity)
+}
+
 // NewGiantBufferPool creates a new instance of GiantBufferBoundedPool with the specified capacity.
 // The capacity must be between 1 and math.MaxUint32 and will be rounded up to the next power of two.
 func NewGiantBufferPool(capacity int) *GiantBufferBoundedPool {
 	return NewBoundedPool[GiantBuffer](capacity)
 }
 
-// BoundedPoolItem is an interface that represents an item that can be used in a bounded pool.
-// Implementing this interface allows an object to be stored and retrieved from a BoundedPool.
+// NewTitanBufferPool creates a new instance of TitanBufferBoundedPool with the specified capacity.
+// The capacity must be between 1 and math.MaxUint32 and will be rounded up to the next power of two.
+func NewTitanBufferPool(capacity int) *TitanBufferBoundedPool {
+	return NewBoundedPool[TitanBuffer](capacity)
+}
+
+// BoundedPoolItem is a type constraint for items stored in a BoundedPool.
+//
+// Any type can satisfy this interface. The constraint exists to make the
+// generic type parameter explicit and to allow future extension.
 type BoundedPoolItem interface{}
 
-// NewBoundedPool creates a new instance of BoundedPool with the specified capacity.
-// The capacity must be between 1 and math.MaxUint32 (inclusive).
+// NewBoundedPool creates a lock-free bounded pool with the specified capacity.
+//
+// The capacity is rounded up to the next power of two for efficient index
+// calculation. The actual capacity can be retrieved via Cap().
+//
+// Panics if capacity < 1 or capacity > math.MaxUint32.
+//
+// After creation, Fill must be called before Get/Put operations.
 func NewBoundedPool[ItemType BoundedPoolItem](capacity int) *BoundedPool[ItemType] {
 	if capacity < 1 || capacity > math.MaxUint32 {
 		panic("capacity must be between 1 and MaxUint32")
@@ -129,7 +169,9 @@ func NewBoundedPool[ItemType BoundedPoolItem](capacity int) *BoundedPool[ItemTyp
 // BoundedPool is safe for concurrent use.
 // The Get() and Put() methods ensure that at least one of the goroutines makes progress.
 // The implementation of BoundedPool is based on the algorithms in the following paper:
-//  https://nikitakoval.org/publications/ppopp20-queues.pdf
+//
+//	https://nikitakoval.org/publications/ppopp20-queues.pdf
+//
 // Usage:
 //
 //	pool := NewBoundedPool[ItemType](capacity) creates a new instance of BoundedPool with the specified capacity.
@@ -139,7 +181,6 @@ func NewBoundedPool[ItemType BoundedPoolItem](capacity int) *BoundedPool[ItemTyp
 //	pool.SetValue(indirect, val) sets the value of the item at the specified indirect index in pool.
 //	pool.Get() retrieves an item from the pool and returns its indirect index.
 //	pool.Put(indirect) puts the indirect index of an item back into the pool.
-
 type BoundedPool[T BoundedPoolItem] struct {
 	_ noCopy
 
@@ -244,17 +285,14 @@ func (pool *BoundedPool[T]) Get() (indirect int, err error) {
 		if err == nil {
 			return int(entry & uint64(pool.mask)), nil
 		}
-		if err == iox.ErrWouldBlock {
-			if pool.nonblocking {
-				return boundedPoolEntryEmpty, err
-			}
-			// Buffer exhaustion: external I/O scale event.
-			// Use adaptive waiting to yield CPU while waiting for
-			// network/disk completion to release buffers.
-			aw.Wait()
-			continue
+		// tryGet only returns ErrWouldBlock on empty pool
+		if pool.nonblocking {
+			return boundedPoolEntryEmpty, err
 		}
-		return boundedPoolEntryEmpty, err
+		// Buffer exhaustion: external I/O scale event.
+		// Use adaptive waiting to yield CPU while waiting for
+		// network/disk completion to release buffers.
+		aw.Wait()
 	}
 }
 
@@ -278,30 +316,34 @@ func (pool *BoundedPool[T]) Put(indirect int) error {
 		if err == nil {
 			return nil
 		}
-		if err == iox.ErrWouldBlock {
-			if pool.nonblocking {
-				return err
-			}
-			// Pool full: external consumer scale event.
-			// Use adaptive waiting to yield CPU while waiting for
-			// consumers to complete their operations.
-			aw.Wait()
-			continue
+		// tryPut only returns ErrWouldBlock on full pool
+		if pool.nonblocking {
+			return err
 		}
-		return err
+		// Pool full: external consumer scale event.
+		// Use adaptive waiting to yield CPU while waiting for
+		// consumers to complete their operations.
+		aw.Wait()
 	}
 }
 
-// Cap returns the capacity of the BoundedPool
+// Cap returns the actual capacity of the BoundedPool.
+//
+// This may be larger than the requested capacity due to power-of-two rounding.
 func (pool *BoundedPool[T]) Cap() int {
 	return int(pool.capacity)
 }
 
+// Internal constants for the lock-free FIFO algorithm.
+// Entry format: [turn:30][reserved:2][empty:1][index:31]
 const (
-	boundedPoolEntryEmpty    = 1 << 62
-	boundedPoolEntryTurnMask = boundedPoolEntryEmpty>>32 - 1
+	boundedPoolEntryEmpty    = 1 << 62                       // Marks slot as empty
+	boundedPoolEntryTurnMask = boundedPoolEntryEmpty>>32 - 1 // Mask for turn counter
 )
 
+// tryGet attempts a single non-blocking dequeue from the pool.
+// Returns the entry value and nil on success, or boundedPoolEntryEmpty
+// and ErrWouldBlock if the pool is empty.
 func (pool *BoundedPool[T]) tryGet() (entry uint64, err error) {
 	sw := spin.Wait{}
 	for {
@@ -333,14 +375,12 @@ func (pool *BoundedPool[T]) tryGet() (entry uint64, err error) {
 	}
 }
 
+// tryPut attempts a single non-blocking enqueue into the pool.
+// Returns nil on success, or ErrWouldBlock if the pool is full.
 func (pool *BoundedPool[T]) tryPut(e uint64) error {
 	sw := spin.Wait{}
 	for {
 		h, t := pool.head.Load(), pool.tail.Load()
-		if t != pool.tail.Load() {
-			sw.Once()
-			continue
-		}
 		if t == h+pool.capacity {
 			return iox.ErrWouldBlock
 		}
@@ -354,11 +394,17 @@ func (pool *BoundedPool[T]) tryPut(e uint64) error {
 	}
 }
 
+// remap converts a logical cursor position to a physical array index.
+// This remapping improves cache locality by distributing adjacent logical
+// positions across different cache lines.
 func (pool *BoundedPool[T]) remap(cursor uint32) int {
 	p, q := cursor/pool.remapN, cursor&pool.remapMask
 	return int(q*pool.remapM + p%pool.remapM)
 }
 
+// empty creates an empty marker with the given turn counter.
+// The turn counter prevents ABA problems by ensuring entries are unique
+// across different enqueue/dequeue cycles.
 func (pool *BoundedPool[T]) empty(turn uint32) uint64 {
 	return boundedPoolEntryEmpty | uint64(turn&boundedPoolEntryTurnMask)
 }
