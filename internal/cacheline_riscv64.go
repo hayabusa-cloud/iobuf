@@ -2,10 +2,10 @@
 // Use of this source code is governed by a MIT-style
 // license that can be found in the LICENSE file.
 
-//go:build amd64 || arm64 || loong64 || mips64 || mips64le || ppc64 || ppc64le || riscv64 || s390x || sparc64 || wasm
+//go:build riscv64
 
 package internal
 
-// CacheLineSize is the typical SIMD/L1 cache line size for 64-bit architectures.
-
+// CacheLineSize is the L1 cache line size for RISC-V 64-bit architectures.
+// Common implementations (SiFive, T-Head) use 64-byte cache lines.
 const CacheLineSize = 64
