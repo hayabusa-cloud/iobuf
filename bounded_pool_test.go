@@ -123,6 +123,36 @@ func TestBoundedPool_Concurrent(t *testing.T) {
 	wg.Wait()
 }
 
+func TestBoundedPool_HighContention(t *testing.T) {
+	// High contention test with many goroutines on small pool
+	const capacity = 8
+	const goroutines = 16
+	const iterations = 2000
+
+	pool := iobuf.NewBoundedPool[int](capacity)
+	pool.Fill(func() int { return 0 })
+
+	var wg sync.WaitGroup
+	wg.Add(goroutines)
+
+	for range goroutines {
+		go func() {
+			defer wg.Done()
+			for range iterations {
+				idx, err := pool.Get()
+				if err != nil {
+					spin.Yield()
+					continue
+				}
+				spin.Yield()
+				_ = pool.Put(idx)
+			}
+		}()
+	}
+
+	wg.Wait()
+}
+
 func TestBoundedPool_Cap(t *testing.T) {
 	const capacity = 32
 	pool := iobuf.NewBoundedPool[int](capacity)
@@ -409,6 +439,22 @@ func TestNewTierBufferPools(t *testing.T) {
 		}
 	})
 
+	t.Run("NewBigBufferPool", func(t *testing.T) {
+		pool := iobuf.NewBigBufferPool(capacity)
+		if pool.Cap() != capacity {
+			t.Errorf("NewBigBufferPool capacity = %d, want %d", pool.Cap(), capacity)
+		}
+		pool.Fill(iobuf.NewBigBuffer)
+		idx, err := pool.Get()
+		if err != nil {
+			t.Fatalf("Get() failed: %v", err)
+		}
+		buf := pool.Value(idx)
+		if len(buf) != iobuf.BufferSizeBig {
+			t.Errorf("buffer size = %d, want %d", len(buf), iobuf.BufferSizeBig)
+		}
+	})
+
 	t.Run("NewLargeBufferPool", func(t *testing.T) {
 		pool := iobuf.NewLargeBufferPool(capacity)
 		if pool.Cap() != capacity {
@@ -422,6 +468,22 @@ func TestNewTierBufferPools(t *testing.T) {
 		buf := pool.Value(idx)
 		if len(buf) != iobuf.BufferSizeLarge {
 			t.Errorf("buffer size = %d, want %d", len(buf), iobuf.BufferSizeLarge)
+		}
+	})
+
+	t.Run("NewGreatBufferPool", func(t *testing.T) {
+		pool := iobuf.NewGreatBufferPool(capacity)
+		if pool.Cap() != capacity {
+			t.Errorf("NewGreatBufferPool capacity = %d, want %d", pool.Cap(), capacity)
+		}
+		pool.Fill(iobuf.NewGreatBuffer)
+		idx, err := pool.Get()
+		if err != nil {
+			t.Fatalf("Get() failed: %v", err)
+		}
+		buf := pool.Value(idx)
+		if len(buf) != iobuf.BufferSizeGreat {
+			t.Errorf("buffer size = %d, want %d", len(buf), iobuf.BufferSizeGreat)
 		}
 	})
 
@@ -441,10 +503,28 @@ func TestNewTierBufferPools(t *testing.T) {
 		}
 	})
 
+	t.Run("NewVastBufferPool", func(t *testing.T) {
+		const smallCap = 2 // Use small capacity for large buffers
+		pool := iobuf.NewVastBufferPool(smallCap)
+		if pool.Cap() != smallCap {
+			t.Errorf("NewVastBufferPool capacity = %d, want %d", pool.Cap(), smallCap)
+		}
+		pool.Fill(iobuf.NewVastBuffer)
+		idx, err := pool.Get()
+		if err != nil {
+			t.Fatalf("Get() failed: %v", err)
+		}
+		buf := pool.Value(idx)
+		if len(buf) != iobuf.BufferSizeVast {
+			t.Errorf("buffer size = %d, want %d", len(buf), iobuf.BufferSizeVast)
+		}
+	})
+
 	t.Run("NewGiantBufferPool", func(t *testing.T) {
-		pool := iobuf.NewGiantBufferPool(capacity)
-		if pool.Cap() != capacity {
-			t.Errorf("NewGiantBufferPool capacity = %d, want %d", pool.Cap(), capacity)
+		const smallCap = 2 // Use small capacity for large buffers
+		pool := iobuf.NewGiantBufferPool(smallCap)
+		if pool.Cap() != smallCap {
+			t.Errorf("NewGiantBufferPool capacity = %d, want %d", pool.Cap(), smallCap)
 		}
 		pool.Fill(iobuf.NewGiantBuffer)
 		idx, err := pool.Get()
@@ -454,6 +534,26 @@ func TestNewTierBufferPools(t *testing.T) {
 		buf := pool.Value(idx)
 		if len(buf) != iobuf.BufferSizeGiant {
 			t.Errorf("buffer size = %d, want %d", len(buf), iobuf.BufferSizeGiant)
+		}
+	})
+
+	t.Run("NewTitanBufferPool", func(t *testing.T) {
+		if raceEnabled {
+			t.Skip("TitanBuffer (128 MiB) skipped in race mode due to stack overhead")
+		}
+		const smallCap = 1 // Use minimal capacity for large buffers
+		pool := iobuf.NewTitanBufferPool(smallCap)
+		if pool.Cap() != smallCap {
+			t.Errorf("NewTitanBufferPool capacity = %d, want %d", pool.Cap(), smallCap)
+		}
+		pool.Fill(iobuf.NewTitanBuffer)
+		idx, err := pool.Get()
+		if err != nil {
+			t.Fatalf("Get() failed: %v", err)
+		}
+		buf := pool.Value(idx)
+		if len(buf) != iobuf.BufferSizeTitan {
+			t.Errorf("buffer size = %d, want %d", len(buf), iobuf.BufferSizeTitan)
 		}
 	})
 }
