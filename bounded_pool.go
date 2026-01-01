@@ -381,6 +381,10 @@ func (pool *BoundedPool[T]) tryPut(e uint64) error {
 	sw := spin.Wait{}
 	for {
 		h, t := pool.head.Load(), pool.tail.Load()
+		if t != pool.tail.Load() {
+			sw.Once()
+			continue
+		}
 		if t == h+pool.capacity {
 			return iox.ErrWouldBlock
 		}
