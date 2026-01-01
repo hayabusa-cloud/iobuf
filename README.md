@@ -24,6 +24,13 @@ English | [简体中文](README.zh-CN.md) | [Español](README.es.md) | [日本�
 - **Zero-copy IoVec generation** for vectored I/O syscalls.
 - **Cooperative back-off**: Uses `iox.Backoff` to handle resource exhaustion gracefully.
 
+## Requirements
+
+- **Go 1.25+**
+- **64-bit CPU** (amd64, arm64, riscv64, loong64, ppc64, s390x, mips64, etc.)
+
+> **Note:** 32-bit architectures are not supported due to 64-bit atomic operations in the lock-free pool implementation.
+
 ## Installation
 
 ```bash
@@ -35,7 +42,7 @@ go get code.hybscloud.com/iobuf
 ### Buffer Pools
 
 ```go
-// Create a pool of 1024 small buffers (1 KiB each)
+// Create a pool of 1024 small buffers (2 KiB each)
 pool := iobuf.NewSmallBufferPool(1024)
 pool.Fill(iobuf.NewSmallBuffer)
 
@@ -79,18 +86,22 @@ addr, n := iobuf.IoVecAddrLen(iovecs)
 
 ## Buffer Tiers
 
-Power-of-4 progression starting at 16 bytes:
+Power-of-4 progression starting at 32 bytes (12 tiers, 32 B to 128 MiB):
 
 | Tier | Size | Use Case |
 |------|------|----------|
-| Pico | 16 B | Tiny metadata, flags |
-| Nano | 64 B | Small headers, tokens |
-| Micro | 256 B | Protocol headers |
-| Small | 1 KiB | Small messages |
-| Medium | 4 KiB | Page-sized I/O |
-| Large | 16 KiB | Large transfers |
-| Huge | 64 KiB | Maximum UDP |
-| Giant | 256 KiB | Bulk I/O, large payloads |
+| Pico | 32 B | UUIDs, flags, tiny control messages |
+| Nano | 128 B | HTTP headers, JSON tokens, small RPC payloads |
+| Micro | 512 B | DNS packets, MQTT messages, protocol frames |
+| Small | 2 KiB | WebSocket frames, small HTTP responses |
+| Medium | 8 KiB | TCP segments, gRPC messages, page I/O |
+| Big | 32 KiB | TLS records (16 KiB max), stream chunks |
+| Large | 128 KiB | io_uring buffer rings, bulk network transfers |
+| Great | 512 KiB | Database pages, large API responses |
+| Huge | 2 MiB | Huge page aligned, memory-mapped files |
+| Vast | 8 MiB | Image processing, compressed archives |
+| Giant | 32 MiB | Video frames, ML model weights |
+| Titan | 128 MiB | Large datasets, maximum stack-safe buffer |
 
 ## API Overview
 
@@ -119,17 +130,27 @@ func NewNanoBufferPool(capacity int) *NanoBufferBoundedPool
 func NewMicroBufferPool(capacity int) *MicroBufferBoundedPool
 func NewSmallBufferPool(capacity int) *SmallBufferBoundedPool
 func NewMediumBufferPool(capacity int) *MediumBufferBoundedPool
+func NewBigBufferPool(capacity int) *BigBufferBoundedPool
 func NewLargeBufferPool(capacity int) *LargeBufferBoundedPool
+func NewGreatBufferPool(capacity int) *GreatBufferBoundedPool
 func NewHugeBufferPool(capacity int) *HugeBufferBoundedPool
+func NewVastBufferPool(capacity int) *VastBufferBoundedPool
 func NewGiantBufferPool(capacity int) *GiantBufferBoundedPool
+func NewTitanBufferPool(capacity int) *TitanBufferBoundedPool
 ```
 
 ### Memory Allocation
 
 ```go
+// Page-aligned memory
 func AlignedMem(size int, pageSize uintptr) []byte
 func AlignedMemBlocks(n int, pageSize uintptr) [][]byte
 func AlignedMemBlock() []byte
+
+// Cache-line-aligned memory (prevents false sharing)
+func CacheLineAlignedMem(size int) []byte
+func CacheLineAlignedMemBlocks(n int, blockSize int) [][]byte
+const CacheLineSize  // 64 or 128 depending on architecture
 ```
 
 ### IoVec Generation
