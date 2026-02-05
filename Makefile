@@ -5,7 +5,7 @@
 all: fmt vet test
 
 fmt:
-	@gofmt -l . | grep -v '^$$' && exit 1 || echo "gofmt: OK"
+	@output=$$(gofmt -l .); if [ -n "$$output" ]; then echo "gofmt: FAIL"; echo "$$output"; exit 1; else echo "gofmt: OK"; fi
 
 vet:
 	@go vet ./...
