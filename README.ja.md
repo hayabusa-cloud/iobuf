@@ -42,7 +42,7 @@ go get code.hybscloud.com/iobuf
 ### バッファプール
 
 ```go
-// 1024個のスモールバッファ（各1 KiB）のプールを作成
+// 1024個のスモールバッファ（各2 KiB）のプールを作成
 pool := iobuf.NewSmallBufferPool(1024)
 pool.Fill(iobuf.NewSmallBuffer)
 

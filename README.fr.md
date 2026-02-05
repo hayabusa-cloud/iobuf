@@ -42,7 +42,7 @@ go get code.hybscloud.com/iobuf
 ### Pools de Buffers
 
 ```go
-// Créer un pool de 1024 petits buffers (1 Kio chacun)
+// Créer un pool de 1024 petits buffers (2 Kio chacun)
 pool := iobuf.NewSmallBufferPool(1024)
 pool.Fill(iobuf.NewSmallBuffer)
 
