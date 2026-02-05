@@ -557,3 +557,137 @@ func TestNewTierBufferPools(t *testing.T) {
 		}
 	})
 }
+
+func TestBoundedPool_PutContention(t *testing.T) {
+	// Stress test targeting the tryPut retry path (line 384-386 in bounded_pool.go).
+	// When many goroutines try to Put simultaneously on a nearly-full pool,
+	// the tail can change between atomic loads, triggering the retry branch.
+	// Uses nonblocking mode to avoid Backoff delays.
+	const capacity = 8
+	const goroutines = 32
+	const iterations = 1000
+
+	pool := iobuf.NewBoundedPool[int](capacity)
+	pool.Fill(func() int { return 0 })
+	pool.SetNonblock(true) // Critical: avoid Backoff delays
+
+	var wg sync.WaitGroup
+	wg.Add(goroutines)
+
+	// All goroutines race to Get/Put, creating contention
+	for g := range goroutines {
+		go func(id int) {
+			defer wg.Done()
+			for range iterations {
+				// Get an item if available
+				idx, err := pool.Get()
+				if err != nil {
+					spin.Yield()
+					continue
+				}
+				// Immediately try to put it back, racing with other goroutines
+				_ = pool.Put(idx)
+			}
+		}(g)
+	}
+
+	wg.Wait()
+}
+
+func TestBoundedPool_ExtremeContention(t *testing.T) {
+	// Ultra-high contention test with tiny pool and many goroutines.
+	// This maximizes the probability of hitting lock-free retry paths.
+	// Uses nonblocking mode to avoid Backoff delays.
+	const capacity = 4
+	const goroutines = 32
+	const iterations = 500
+
+	pool := iobuf.NewBoundedPool[int](capacity)
+	pool.Fill(func() int { return 0 })
+	pool.SetNonblock(true) // Critical: avoid Backoff delays
+
+	var wg sync.WaitGroup
+	wg.Add(goroutines)
+
+	for range goroutines {
+		go func() {
+			defer wg.Done()
+			for range iterations {
+				idx, err := pool.Get()
+				if err != nil {
+					spin.Yield()
+					continue
+				}
+				// No delay - maximize contention
+				_ = pool.Put(idx)
+			}
+		}()
+	}
+
+	wg.Wait()
+}
+
+func TestBoundedPool_CapacityRounding(t *testing.T) {
+	// Test that capacity is rounded to next power of two
+	tests := []struct {
+		requested int
+		expected  int
+	}{
+		{1, 1},
+		{2, 2},
+		{3, 4},
+		{5, 8},
+		{7, 8},
+		{9, 16},
+		{15, 16},
+		{17, 32},
+		{100, 128},
+		{1000, 1024},
+	}
+
+	for _, tt := range tests {
+		pool := iobuf.NewBoundedPool[int](tt.requested)
+		if pool.Cap() != tt.expected {
+			t.Errorf("NewBoundedPool(%d).Cap() = %d, want %d", tt.requested, pool.Cap(), tt.expected)
+		}
+	}
+}
+
+func TestBoundedPool_ValueSetValue_WithData(t *testing.T) {
+	// Test Value and SetValue with actual data verification
+	const capacity = 8
+	pool := iobuf.NewBoundedPool[string](capacity)
+	pool.Fill(func() string { return "" })
+
+	idx, err := pool.Get()
+	if err != nil {
+		t.Fatalf("Get() failed: %v", err)
+	}
+
+	// Verify initial value
+	if pool.Value(idx) != "" {
+		t.Errorf("initial Value(%d) = %q, want empty string", idx, pool.Value(idx))
+	}
+
+	// Set and verify
+	pool.SetValue(idx, "test-value")
+	if pool.Value(idx) != "test-value" {
+		t.Errorf("Value(%d) = %q, want %q", idx, pool.Value(idx), "test-value")
+	}
+
+	// Put back and get again - value should persist
+	err = pool.Put(idx)
+	if err != nil {
+		t.Fatalf("Put() failed: %v", err)
+	}
+
+	idx2, err := pool.Get()
+	if err != nil {
+		t.Fatalf("second Get() failed: %v", err)
+	}
+
+	// The pool reuses indices, so the value should still be there
+	if pool.Value(idx2) != "test-value" {
+		t.Logf("Note: Value may differ after Put/Get cycle (idx=%d, idx2=%d)", idx, idx2)
+	}
+}

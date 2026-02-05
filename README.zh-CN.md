@@ -42,7 +42,7 @@ go get code.hybscloud.com/iobuf
 ### 缓冲池
 
 ```go
-// 创建包含 1024 个小缓冲区的池（每个 1 KiB）
+// 创建包含 1024 个小缓冲区的池（每个 2 KiB）
 pool := iobuf.NewSmallBufferPool(1024)
 pool.Fill(iobuf.NewSmallBuffer)
 
