@@ -75,7 +75,7 @@
 // IoVec provides scatter/gather I/O support for readv/writev syscalls:
 //
 //	buffers := make([]SmallBuffer, 8)
-//	iovecs := IoVecFromSmallBuffers(buffers)
+//	iovecs := IoVecFrom(buffers)
 //	addr, n := IoVecAddrLen(iovecs)  // Get pointer for syscall
 //
 // # Architecture Requirements

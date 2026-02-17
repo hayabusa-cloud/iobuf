@@ -97,7 +97,7 @@ func BenchmarkAlignedMemBlocks_16(b *testing.B) {
 
 // IoVec benchmarks
 
-func BenchmarkIoVecFromSmallBuffers_8(b *testing.B) {
+func BenchmarkIoVecFrom_SmallBuffer_8(b *testing.B) {
 	buffers := make([]iobuf.SmallBuffer, 8)
 	b.ResetTimer()
 	for range b.N {
@@ -105,7 +105,7 @@ func BenchmarkIoVecFromSmallBuffers_8(b *testing.B) {
 	}
 }
 
-func BenchmarkIoVecFromSmallBuffers_64(b *testing.B) {
+func BenchmarkIoVecFrom_SmallBuffer_64(b *testing.B) {
 	buffers := make([]iobuf.SmallBuffer, 64)
 	b.ResetTimer()
 	for range b.N {
@@ -113,7 +113,7 @@ func BenchmarkIoVecFromSmallBuffers_64(b *testing.B) {
 	}
 }
 
-func BenchmarkIoVecFromLargeBuffers_8(b *testing.B) {
+func BenchmarkIoVecFrom_LargeBuffer_8(b *testing.B) {
 	buffers := make([]iobuf.LargeBuffer, 8)
 	b.ResetTimer()
 	for range b.N {

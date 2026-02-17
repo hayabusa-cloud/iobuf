@@ -78,7 +78,7 @@ blocks := iobuf.AlignedMemBlocks(16, iobuf.PageSize)
 ```go
 // 階層化バッファをreadv/writev用のiovecに変換
 buffers := make([]iobuf.SmallBuffer, 8)
-iovecs := iobuf.IoVecFromSmallBuffers(buffers)
+iovecs := iobuf.IoVecFrom(buffers)
 
 // システムコール用の生ポインタとカウントを取得
 addr, n := iobuf.IoVecAddrLen(iovecs)
@@ -150,9 +150,10 @@ func AlignedMemBlock() []byte
 ### IoVec生成
 
 ```go
+func IoVecFrom[T BufferType](buffers []T) []IoVec
 func IoVecFromBytesSlice(iov [][]byte) (addr uintptr, n int)
-func IoVecFromPicoBuffers(buffers []PicoBuffer) []IoVec
-// ... および他のすべての階層
+func IoVecFromRegisteredBuffers(buffers []RegisterBuffer) []IoVec
+func IoVecAddrLen(vec []IoVec) (addr uintptr, n int)
 ```
 
 ## 設計
