@@ -26,7 +26,7 @@ Pools de buffers acotados sin bloqueos y eficientes en memoria para Go, optimiza
 
 ## Requisitos
 
-- **Go 1.25+**
+- **Go 1.26+**
 - **CPU de 64 bits** (amd64, arm64, riscv64, loong64, ppc64, s390x, mips64, etc.)
 
 > **Nota:** Las arquitecturas de 32 bits no son compatibles debido a las operaciones atómicas de 64 bits en la implementación del pool sin bloqueos.

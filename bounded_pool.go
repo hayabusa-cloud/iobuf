@@ -115,9 +115,9 @@ func NewTitanBufferPool(capacity int) *TitanBufferBoundedPool {
 
 // BoundedPoolItem is a type constraint for items stored in a BoundedPool.
 //
-// Any type can satisfy this interface. The constraint exists to make the
+// Any type can satisfy this constraint. The alias exists to make the
 // generic type parameter explicit and to allow future extension.
-type BoundedPoolItem interface{}
+type BoundedPoolItem = any
 
 // NewBoundedPool creates a lock-free bounded pool with the specified capacity.
 //
