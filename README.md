@@ -78,7 +78,7 @@ blocks := iobuf.AlignedMemBlocks(16, iobuf.PageSize)
 ```go
 // Convert tiered buffers to iovec for readv/writev
 buffers := make([]iobuf.SmallBuffer, 8)
-iovecs := iobuf.IoVecFromSmallBuffers(buffers)
+iovecs := iobuf.IoVecFrom(buffers)
 
 // Get raw pointer and count for syscalls
 addr, n := iobuf.IoVecAddrLen(iovecs)
@@ -156,9 +156,10 @@ const CacheLineSize  // 64 or 128 depending on architecture
 ### IoVec Generation
 
 ```go
+func IoVecFrom[T BufferType](buffers []T) []IoVec
 func IoVecFromBytesSlice(iov [][]byte) (addr uintptr, n int)
-func IoVecFromPicoBuffers(buffers []PicoBuffer) []IoVec
-// ... and for all other tiers
+func IoVecFromRegisteredBuffers(buffers []RegisterBuffer) []IoVec
+func IoVecAddrLen(vec []IoVec) (addr uintptr, n int)
 ```
 
 ## Design

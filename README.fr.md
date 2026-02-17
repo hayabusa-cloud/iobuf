@@ -78,7 +78,7 @@ blocks := iobuf.AlignedMemBlocks(16, iobuf.PageSize)
 ```go
 // Convertir les buffers échelonnés en iovec pour readv/writev
 buffers := make([]iobuf.SmallBuffer, 8)
-iovecs := iobuf.IoVecFromSmallBuffers(buffers)
+iovecs := iobuf.IoVecFrom(buffers)
 
 // Obtenir le pointeur brut et le compte pour les appels système
 addr, n := iobuf.IoVecAddrLen(iovecs)
@@ -150,9 +150,10 @@ func AlignedMemBlock() []byte
 ### Génération IoVec
 
 ```go
+func IoVecFrom[T BufferType](buffers []T) []IoVec
 func IoVecFromBytesSlice(iov [][]byte) (addr uintptr, n int)
-func IoVecFromPicoBuffers(buffers []PicoBuffer) []IoVec
-// ... et pour tous les autres niveaux
+func IoVecFromRegisteredBuffers(buffers []RegisterBuffer) []IoVec
+func IoVecAddrLen(vec []IoVec) (addr uintptr, n int)
 ```
 
 ## Conception

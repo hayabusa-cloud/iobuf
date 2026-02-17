@@ -78,7 +78,7 @@ blocks := iobuf.AlignedMemBlocks(16, iobuf.PageSize)
 ```go
 // 将分层缓冲区转换为 iovec 用于 readv/writev
 buffers := make([]iobuf.SmallBuffer, 8)
-iovecs := iobuf.IoVecFromSmallBuffers(buffers)
+iovecs := iobuf.IoVecFrom(buffers)
 
 // 获取原始指针和计数用于系统调用
 addr, n := iobuf.IoVecAddrLen(iovecs)
@@ -150,9 +150,10 @@ func AlignedMemBlock() []byte
 ### IoVec 生成
 
 ```go
+func IoVecFrom[T BufferType](buffers []T) []IoVec
 func IoVecFromBytesSlice(iov [][]byte) (addr uintptr, n int)
-func IoVecFromPicoBuffers(buffers []PicoBuffer) []IoVec
-// ... 以及所有其他层级
+func IoVecFromRegisteredBuffers(buffers []RegisterBuffer) []IoVec
+func IoVecAddrLen(vec []IoVec) (addr uintptr, n int)
 ```
 
 ## 设计
