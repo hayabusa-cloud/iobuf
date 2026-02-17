@@ -39,7 +39,7 @@ func IoVecFromBytesSlice(iov [][]byte) (addr uintptr, n int) {
 		return 0, 0
 	}
 	vec := make([]IoVec, len(iov))
-	for i := range len(iov) {
+	for i := range iov {
 		vec[i] = IoVec{Base: unsafe.SliceData(iov[i]), Len: uint64(len(iov[i]))}
 	}
 	addr, n = uintptr(unsafe.Pointer(unsafe.SliceData(vec))), len(vec)
@@ -58,158 +58,18 @@ func IoVecAddrLen(vec []IoVec) (addr uintptr, n int) {
 	return
 }
 
-// IoVecFromPicoBuffers converts a slice of PicoBuffer to an IoVec slice.
+// IoVecFrom converts a slice of typed buffers to an IoVec slice.
 // The returned IoVec elements point directly to the buffer memory without copying.
-func IoVecFromPicoBuffers(buffers []PicoBuffer) []IoVec {
+func IoVecFrom[T BufferType](buffers []T) []IoVec {
 	if len(buffers) == 0 {
 		return nil
 	}
 	vec := make([]IoVec, len(buffers))
-	for i := range len(buffers) {
-		vec[i] = IoVec{Base: (*byte)(unsafe.Pointer(&buffers[i])), Len: BufferSizePico}
-	}
-	return vec
-}
-
-// IoVecFromNanoBuffers converts a slice of NanoBuffer to an IoVec slice.
-// The returned IoVec elements point directly to the buffer memory without copying.
-func IoVecFromNanoBuffers(buffers []NanoBuffer) []IoVec {
-	if len(buffers) == 0 {
-		return nil
-	}
-	vec := make([]IoVec, len(buffers))
-	for i := range len(buffers) {
-		vec[i] = IoVec{Base: (*byte)(unsafe.Pointer(&buffers[i])), Len: BufferSizeNano}
-	}
-	return vec
-}
-
-// IoVecFromMicroBuffers converts a slice of MicroBuffer to an IoVec slice.
-// The returned IoVec elements point directly to the buffer memory without copying.
-func IoVecFromMicroBuffers(buffers []MicroBuffer) []IoVec {
-	if len(buffers) == 0 {
-		return nil
-	}
-	vec := make([]IoVec, len(buffers))
-	for i := range len(buffers) {
-		vec[i] = IoVec{Base: (*byte)(unsafe.Pointer(&buffers[i])), Len: BufferSizeMicro}
-	}
-	return vec
-}
-
-// IoVecFromSmallBuffers converts a slice of SmallBuffer to an IoVec slice.
-// The returned IoVec elements point directly to the buffer memory without copying.
-func IoVecFromSmallBuffers(buffers []SmallBuffer) []IoVec {
-	if len(buffers) == 0 {
-		return nil
-	}
-	vec := make([]IoVec, len(buffers))
-	for i := range len(buffers) {
-		vec[i] = IoVec{Base: (*byte)(unsafe.Pointer(&buffers[i])), Len: BufferSizeSmall}
-	}
-	return vec
-}
-
-// IoVecFromMediumBuffers converts a slice of MediumBuffer to an IoVec slice.
-// The returned IoVec elements point directly to the buffer memory without copying.
-func IoVecFromMediumBuffers(buffers []MediumBuffer) []IoVec {
-	if len(buffers) == 0 {
-		return nil
-	}
-	vec := make([]IoVec, len(buffers))
-	for i := range len(buffers) {
-		vec[i] = IoVec{Base: (*byte)(unsafe.Pointer(&buffers[i])), Len: BufferSizeMedium}
-	}
-	return vec
-}
-
-// IoVecFromBigBuffers converts a slice of BigBuffer to an IoVec slice.
-// The returned IoVec elements point directly to the buffer memory without copying.
-func IoVecFromBigBuffers(buffers []BigBuffer) []IoVec {
-	if len(buffers) == 0 {
-		return nil
-	}
-	vec := make([]IoVec, len(buffers))
-	for i := range len(buffers) {
-		vec[i] = IoVec{Base: (*byte)(unsafe.Pointer(&buffers[i])), Len: BufferSizeBig}
-	}
-	return vec
-}
-
-// IoVecFromLargeBuffers converts a slice of LargeBuffer to an IoVec slice.
-// The returned IoVec elements point directly to the buffer memory without copying.
-func IoVecFromLargeBuffers(buffers []LargeBuffer) []IoVec {
-	if len(buffers) == 0 {
-		return nil
-	}
-	vec := make([]IoVec, len(buffers))
-	for i := range len(buffers) {
-		vec[i] = IoVec{Base: (*byte)(unsafe.Pointer(&buffers[i])), Len: BufferSizeLarge}
-	}
-	return vec
-}
-
-// IoVecFromGreatBuffers converts a slice of GreatBuffer to an IoVec slice.
-// The returned IoVec elements point directly to the buffer memory without copying.
-func IoVecFromGreatBuffers(buffers []GreatBuffer) []IoVec {
-	if len(buffers) == 0 {
-		return nil
-	}
-	vec := make([]IoVec, len(buffers))
-	for i := range len(buffers) {
-		vec[i] = IoVec{Base: (*byte)(unsafe.Pointer(&buffers[i])), Len: BufferSizeGreat}
-	}
-	return vec
-}
-
-// IoVecFromHugeBuffers converts a slice of HugeBuffer to an IoVec slice.
-// The returned IoVec elements point directly to the buffer memory without copying.
-func IoVecFromHugeBuffers(buffers []HugeBuffer) []IoVec {
-	if len(buffers) == 0 {
-		return nil
-	}
-	vec := make([]IoVec, len(buffers))
-	for i := range len(buffers) {
-		vec[i] = IoVec{Base: (*byte)(unsafe.Pointer(&buffers[i])), Len: BufferSizeHuge}
-	}
-	return vec
-}
-
-// IoVecFromVastBuffers converts a slice of VastBuffer to an IoVec slice.
-// The returned IoVec elements point directly to the buffer memory without copying.
-func IoVecFromVastBuffers(buffers []VastBuffer) []IoVec {
-	if len(buffers) == 0 {
-		return nil
-	}
-	vec := make([]IoVec, len(buffers))
-	for i := range len(buffers) {
-		vec[i] = IoVec{Base: (*byte)(unsafe.Pointer(&buffers[i])), Len: BufferSizeVast}
-	}
-	return vec
-}
-
-// IoVecFromGiantBuffers converts a slice of GiantBuffer to an IoVec slice.
-// The returned IoVec elements point directly to the buffer memory without copying.
-func IoVecFromGiantBuffers(buffers []GiantBuffer) []IoVec {
-	if len(buffers) == 0 {
-		return nil
-	}
-	vec := make([]IoVec, len(buffers))
-	for i := range len(buffers) {
-		vec[i] = IoVec{Base: (*byte)(unsafe.Pointer(&buffers[i])), Len: BufferSizeGiant}
-	}
-	return vec
-}
-
-// IoVecFromTitanBuffers converts a slice of TitanBuffer to an IoVec slice.
-// The returned IoVec elements point directly to the buffer memory without copying.
-func IoVecFromTitanBuffers(buffers []TitanBuffer) []IoVec {
-	if len(buffers) == 0 {
-		return nil
-	}
-	vec := make([]IoVec, len(buffers))
-	for i := range len(buffers) {
-		vec[i] = IoVec{Base: (*byte)(unsafe.Pointer(&buffers[i])), Len: BufferSizeTitan}
+	for i := range buffers {
+		vec[i] = IoVec{
+			Base: (*byte)(unsafe.Pointer(&buffers[i])),
+			Len:  uint64(unsafe.Sizeof(buffers[i])),
+		}
 	}
 	return vec
 }
@@ -221,7 +81,7 @@ func IoVecFromRegisteredBuffers(buffers []RegisterBuffer) []IoVec {
 		return nil
 	}
 	vec := make([]IoVec, len(buffers))
-	for i := range len(buffers) {
+	for i := range buffers {
 		vec[i] = IoVec{Base: (*byte)(unsafe.Pointer(&buffers[i])), Len: registerBufferSize}
 	}
 	return vec

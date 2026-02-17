@@ -72,25 +72,25 @@ func BenchmarkLargeBufferPool_GetPut(b *testing.B) {
 // Memory allocation benchmarks
 
 func BenchmarkAlignedMemBlock(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = iobuf.AlignedMemBlock()
 	}
 }
 
 func BenchmarkAlignedMem_4K(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = iobuf.AlignedMem(4096, iobuf.PageSize)
 	}
 }
 
 func BenchmarkAlignedMem_64K(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = iobuf.AlignedMem(65536, iobuf.PageSize)
 	}
 }
 
 func BenchmarkAlignedMemBlocks_16(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = iobuf.AlignedMemBlocks(16, iobuf.PageSize)
 	}
 }
@@ -100,24 +100,24 @@ func BenchmarkAlignedMemBlocks_16(b *testing.B) {
 func BenchmarkIoVecFromSmallBuffers_8(b *testing.B) {
 	buffers := make([]iobuf.SmallBuffer, 8)
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_ = iobuf.IoVecFromSmallBuffers(buffers)
+	for range b.N {
+		_ = iobuf.IoVecFrom(buffers)
 	}
 }
 
 func BenchmarkIoVecFromSmallBuffers_64(b *testing.B) {
 	buffers := make([]iobuf.SmallBuffer, 64)
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_ = iobuf.IoVecFromSmallBuffers(buffers)
+	for range b.N {
+		_ = iobuf.IoVecFrom(buffers)
 	}
 }
 
 func BenchmarkIoVecFromLargeBuffers_8(b *testing.B) {
 	buffers := make([]iobuf.LargeBuffer, 8)
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_ = iobuf.IoVecFromLargeBuffers(buffers)
+	for range b.N {
+		_ = iobuf.IoVecFrom(buffers)
 	}
 }
 
@@ -127,16 +127,16 @@ func BenchmarkIoVecFromBytesSlice_8(b *testing.B) {
 		slices[i] = make([]byte, 256)
 	}
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_, _ = iobuf.IoVecFromBytesSlice(slices)
 	}
 }
 
 func BenchmarkIoVecAddrLen(b *testing.B) {
 	buffers := make([]iobuf.SmallBuffer, 8)
-	iovecs := iobuf.IoVecFromSmallBuffers(buffers)
+	iovecs := iobuf.IoVecFrom(buffers)
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_, _ = iobuf.IoVecAddrLen(iovecs)
 	}
 }
@@ -148,7 +148,7 @@ func BenchmarkPool_Value(b *testing.B) {
 	pool.Fill(iobuf.NewSmallBuffer)
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		_ = pool.Value(i % 1024)
 	}
 }
@@ -159,7 +159,7 @@ func BenchmarkPool_SetValue(b *testing.B) {
 	buf := iobuf.NewSmallBuffer()
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		pool.SetValue(i%1024, buf)
 	}
 }
@@ -244,19 +244,19 @@ func BenchmarkPool_Contention_LargeBuffer(b *testing.B) {
 // Cache-line aligned memory benchmarks
 
 func BenchmarkCacheLineAlignedMem_64(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = iobuf.CacheLineAlignedMem(64)
 	}
 }
 
 func BenchmarkCacheLineAlignedMem_4K(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = iobuf.CacheLineAlignedMem(4096)
 	}
 }
 
 func BenchmarkCacheLineAlignedMemBlocks_8(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = iobuf.CacheLineAlignedMemBlocks(8, 64)
 	}
 }
@@ -266,7 +266,7 @@ func BenchmarkCacheLineAlignedMemBlocks_8(b *testing.B) {
 func BenchmarkTierBySize(b *testing.B) {
 	sizes := []int{16, 64, 256, 1024, 4096, 16384, 65536, 262144, 1048576}
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		_ = iobuf.TierBySize(sizes[i%len(sizes)])
 	}
 }
@@ -274,7 +274,7 @@ func BenchmarkTierBySize(b *testing.B) {
 func BenchmarkBufferSizeFor(b *testing.B) {
 	sizes := []int{16, 64, 256, 1024, 4096, 16384, 65536, 262144, 1048576}
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		_ = iobuf.BufferSizeFor(sizes[i%len(sizes)])
 	}
 }
@@ -285,7 +285,7 @@ func BenchmarkBufferTier_Size(b *testing.B) {
 		iobuf.TierMedium, iobuf.TierBig, iobuf.TierLarge, iobuf.TierGreat,
 	}
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		_ = tiers[i%len(tiers)].Size()
 	}
 }
@@ -297,7 +297,7 @@ func BenchmarkPool_Sequential_GetPut(b *testing.B) {
 	pool.Fill(iobuf.NewSmallBuffer)
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		idx, _ := pool.Get()
 		_ = pool.Put(idx)
 	}
@@ -309,7 +309,7 @@ func BenchmarkPool_Sequential_GetPut_Nonblocking(b *testing.B) {
 	pool.SetNonblock(true)
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		idx, err := pool.Get()
 		if err != nil {
 			continue
@@ -391,13 +391,13 @@ func BenchmarkBigBufferPool_GetPut(b *testing.B) {
 // Buffer construction benchmarks
 
 func BenchmarkNewBuffers_8x1K(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = iobuf.NewBuffers(8, 1024)
 	}
 }
 
 func BenchmarkNewBuffers_64x4K(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_ = iobuf.NewBuffers(64, 4096)
 	}
 }
@@ -407,16 +407,16 @@ func BenchmarkNewBuffers_64x4K(b *testing.B) {
 func BenchmarkSmallArrayFromSlice(b *testing.B) {
 	data := make([]byte, iobuf.BufferSizeSmall*2)
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_ = iobuf.SmallArrayFromSlice(data, 0)
+	for range b.N {
+		_ = iobuf.ArrayFromSlice[iobuf.SmallBuffer](data, 0)
 	}
 }
 
 func BenchmarkSliceOfSmallArray(b *testing.B) {
 	data := make([]byte, iobuf.BufferSizeSmall*16)
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		_ = iobuf.SliceOfSmallArray(data, 0, 8)
+	for range b.N {
+		_ = iobuf.SliceOfArray[iobuf.SmallBuffer](data, 0, 8)
 	}
 }
 

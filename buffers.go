@@ -322,192 +322,27 @@ func (b VastBuffer) Reset()   {}
 func (b GiantBuffer) Reset()  {}
 func (b TitanBuffer) Reset()  {}
 
-// PicoArrayFromSlice returns a PicoBuffer by copying from the slice at the given offset.
+// ArrayFromSlice returns a buffer of type T by copying from the slice at the given offset.
 //
-// The caller must ensure offset+BufferSizePico <= len(s).
+// The caller must ensure offset+unsafe.Sizeof(T{}) <= len(s).
 // The returned array is a copy, not a view of the underlying slice.
-func PicoArrayFromSlice(s []byte, offset int64) PicoBuffer {
+func ArrayFromSlice[T BufferType](s []byte, offset int64) T {
 	ptr := unsafe.Add(unsafe.Pointer(unsafe.SliceData(s)), offset)
-	return *(*[BufferSizePico]byte)(ptr)
+	return *(*T)(ptr)
 }
 
-// NanoArrayFromSlice returns a NanoBuffer by copying from the slice at the given offset.
-func NanoArrayFromSlice(s []byte, offset int64) NanoBuffer {
-	ptr := unsafe.Add(unsafe.Pointer(unsafe.SliceData(s)), offset)
-	return *(*[BufferSizeNano]byte)(ptr)
-}
-
-// MicroArrayFromSlice returns a MicroBuffer by copying from the slice at the given offset.
-func MicroArrayFromSlice(s []byte, offset int64) MicroBuffer {
-	ptr := unsafe.Add(unsafe.Pointer(unsafe.SliceData(s)), offset)
-	return *(*[BufferSizeMicro]byte)(ptr)
-}
-
-// SmallArrayFromSlice returns a SmallBuffer by copying from the slice at the given offset.
-func SmallArrayFromSlice(s []byte, offset int64) SmallBuffer {
-	ptr := unsafe.Add(unsafe.Pointer(unsafe.SliceData(s)), offset)
-	return *(*[BufferSizeSmall]byte)(ptr)
-}
-
-// MediumArrayFromSlice returns a MediumBuffer by copying from the slice at the given offset.
-func MediumArrayFromSlice(s []byte, offset int64) MediumBuffer {
-	ptr := unsafe.Add(unsafe.Pointer(unsafe.SliceData(s)), offset)
-	return *(*[BufferSizeMedium]byte)(ptr)
-}
-
-// BigArrayFromSlice returns a BigBuffer by copying from the slice at the given offset.
-func BigArrayFromSlice(s []byte, offset int64) BigBuffer {
-	ptr := unsafe.Add(unsafe.Pointer(unsafe.SliceData(s)), offset)
-	return *(*[BufferSizeBig]byte)(ptr)
-}
-
-// LargeArrayFromSlice returns a LargeBuffer by copying from the slice at the given offset.
-func LargeArrayFromSlice(s []byte, offset int64) LargeBuffer {
-	ptr := unsafe.Add(unsafe.Pointer(unsafe.SliceData(s)), offset)
-	return *(*[BufferSizeLarge]byte)(ptr)
-}
-
-// GreatArrayFromSlice returns a GreatBuffer by copying from the slice at the given offset.
-func GreatArrayFromSlice(s []byte, offset int64) GreatBuffer {
-	ptr := unsafe.Add(unsafe.Pointer(unsafe.SliceData(s)), offset)
-	return *(*[BufferSizeGreat]byte)(ptr)
-}
-
-// HugeArrayFromSlice returns a HugeBuffer by copying from the slice at the given offset.
-func HugeArrayFromSlice(s []byte, offset int64) HugeBuffer {
-	ptr := unsafe.Add(unsafe.Pointer(unsafe.SliceData(s)), offset)
-	return *(*[BufferSizeHuge]byte)(ptr)
-}
-
-// VastArrayFromSlice returns a VastBuffer by copying from the slice at the given offset.
-func VastArrayFromSlice(s []byte, offset int64) VastBuffer {
-	ptr := unsafe.Add(unsafe.Pointer(unsafe.SliceData(s)), offset)
-	return *(*[BufferSizeVast]byte)(ptr)
-}
-
-// GiantArrayFromSlice returns a GiantBuffer by copying from the slice at the given offset.
-func GiantArrayFromSlice(s []byte, offset int64) GiantBuffer {
-	ptr := unsafe.Add(unsafe.Pointer(unsafe.SliceData(s)), offset)
-	return *(*[BufferSizeGiant]byte)(ptr)
-}
-
-// TitanArrayFromSlice returns a TitanBuffer by copying from the slice at the given offset.
-func TitanArrayFromSlice(s []byte, offset int64) TitanBuffer {
-	ptr := unsafe.Add(unsafe.Pointer(unsafe.SliceData(s)), offset)
-	return *(*[BufferSizeTitan]byte)(ptr)
-}
-
-// SliceOfPicoArray returns a slice of n PicoBuffers viewed from the underlying slice.
+// SliceOfArray returns a slice of n buffers of type T viewed from the underlying slice.
 //
 // The returned slice references the same memory as s[offset:]; modifications
 // to either will be visible in both. The caller must ensure:
-//   - offset + n*BufferSizePico <= len(s)
+//   - offset + n*unsafe.Sizeof(T{}) <= len(s)
 //   - n >= 1 (panics otherwise)
-func SliceOfPicoArray(s []byte, offset int64, n int) []PicoBuffer {
+func SliceOfArray[T BufferType](s []byte, offset int64, n int) []T {
 	if n < 1 {
 		panic("invalid array count")
 	}
 	base := unsafe.Pointer(unsafe.SliceData(s))
-	return unsafe.Slice((*PicoBuffer)(unsafe.Add(base, offset)), n)
-}
-
-// SliceOfNanoArray returns a slice of NanoBuffer views of the underlying slice starting at offset.
-func SliceOfNanoArray(s []byte, offset int64, n int) []NanoBuffer {
-	if n < 1 {
-		panic("invalid array count")
-	}
-	base := unsafe.Pointer(unsafe.SliceData(s))
-	return unsafe.Slice((*NanoBuffer)(unsafe.Add(base, offset)), n)
-}
-
-// SliceOfMicroArray returns a slice of MicroBuffer views of the underlying slice starting at offset.
-func SliceOfMicroArray(s []byte, offset int64, n int) []MicroBuffer {
-	if n < 1 {
-		panic("invalid array count")
-	}
-	base := unsafe.Pointer(unsafe.SliceData(s))
-	return unsafe.Slice((*MicroBuffer)(unsafe.Add(base, offset)), n)
-}
-
-// SliceOfSmallArray returns a slice of SmallBuffer views of the underlying slice starting at offset.
-func SliceOfSmallArray(s []byte, offset int64, n int) []SmallBuffer {
-	if n < 1 {
-		panic("invalid array count")
-	}
-	base := unsafe.Pointer(unsafe.SliceData(s))
-	return unsafe.Slice((*SmallBuffer)(unsafe.Add(base, offset)), n)
-}
-
-// SliceOfMediumArray returns a slice of MediumBuffer views of the underlying slice starting at offset.
-func SliceOfMediumArray(s []byte, offset int64, n int) []MediumBuffer {
-	if n < 1 {
-		panic("invalid array count")
-	}
-	base := unsafe.Pointer(unsafe.SliceData(s))
-	return unsafe.Slice((*MediumBuffer)(unsafe.Add(base, offset)), n)
-}
-
-// SliceOfBigArray returns a slice of BigBuffer views of the underlying slice starting at offset.
-func SliceOfBigArray(s []byte, offset int64, n int) []BigBuffer {
-	if n < 1 {
-		panic("invalid array count")
-	}
-	base := unsafe.Pointer(unsafe.SliceData(s))
-	return unsafe.Slice((*BigBuffer)(unsafe.Add(base, offset)), n)
-}
-
-// SliceOfLargeArray returns a slice of LargeBuffer views of the underlying slice starting at offset.
-func SliceOfLargeArray(s []byte, offset int64, n int) []LargeBuffer {
-	if n < 1 {
-		panic("invalid array count")
-	}
-	base := unsafe.Pointer(unsafe.SliceData(s))
-	return unsafe.Slice((*LargeBuffer)(unsafe.Add(base, offset)), n)
-}
-
-// SliceOfGreatArray returns a slice of GreatBuffer views of the underlying slice starting at offset.
-func SliceOfGreatArray(s []byte, offset int64, n int) []GreatBuffer {
-	if n < 1 {
-		panic("invalid array count")
-	}
-	base := unsafe.Pointer(unsafe.SliceData(s))
-	return unsafe.Slice((*GreatBuffer)(unsafe.Add(base, offset)), n)
-}
-
-// SliceOfHugeArray returns a slice of HugeBuffer views of the underlying slice starting at offset.
-func SliceOfHugeArray(s []byte, offset int64, n int) []HugeBuffer {
-	if n < 1 {
-		panic("invalid array count")
-	}
-	base := unsafe.Pointer(unsafe.SliceData(s))
-	return unsafe.Slice((*HugeBuffer)(unsafe.Add(base, offset)), n)
-}
-
-// SliceOfVastArray returns a slice of VastBuffer views of the underlying slice starting at offset.
-func SliceOfVastArray(s []byte, offset int64, n int) []VastBuffer {
-	if n < 1 {
-		panic("invalid array count")
-	}
-	base := unsafe.Pointer(unsafe.SliceData(s))
-	return unsafe.Slice((*VastBuffer)(unsafe.Add(base, offset)), n)
-}
-
-// SliceOfGiantArray returns a slice of GiantBuffer views of the underlying slice starting at offset.
-func SliceOfGiantArray(s []byte, offset int64, n int) []GiantBuffer {
-	if n < 1 {
-		panic("invalid array count")
-	}
-	base := unsafe.Pointer(unsafe.SliceData(s))
-	return unsafe.Slice((*GiantBuffer)(unsafe.Add(base, offset)), n)
-}
-
-// SliceOfTitanArray returns a slice of TitanBuffer views of the underlying slice starting at offset.
-func SliceOfTitanArray(s []byte, offset int64, n int) []TitanBuffer {
-	if n < 1 {
-		panic("invalid array count")
-	}
-	base := unsafe.Pointer(unsafe.SliceData(s))
-	return unsafe.Slice((*TitanBuffer)(unsafe.Add(base, offset)), n)
+	return unsafe.Slice((*T)(unsafe.Add(base, offset)), n)
 }
 
 // NewRegisterBufferPool creates a RegisterBufferPool for io_uring buffer registration.
