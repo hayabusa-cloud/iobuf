@@ -26,7 +26,7 @@ Pools de buffers bornés sans verrou et économes en mémoire pour Go, optimisé
 
 ## Prérequis
 
-- **Go 1.25+**
+- **Go 1.26+**
 - **CPU 64 bits** (amd64, arm64, riscv64, loong64, ppc64, s390x, mips64, etc.)
 
 > **Note :** Les architectures 32 bits ne sont pas prises en charge en raison des opérations atomiques 64 bits dans l'implémentation du pool sans verrou.

@@ -398,98 +398,98 @@ func TestArrayFromSlice(t *testing.T) {
 		data[i] = byte(i % 256)
 	}
 
-	t.Run("PicoArrayFromSlice", func(t *testing.T) {
-		arr := iobuf.PicoArrayFromSlice(data, 0)
+	t.Run("PicoBuffer", func(t *testing.T) {
+		arr := iobuf.ArrayFromSlice[iobuf.PicoBuffer](data, 0)
 		if arr[0] != data[0] {
-			t.Errorf("PicoArrayFromSlice[0] = %d, want %d", arr[0], data[0])
+			t.Errorf("ArrayFromSlice[PicoBuffer][0] = %d, want %d", arr[0], data[0])
 		}
-		arr2 := iobuf.PicoArrayFromSlice(data, 16)
+		arr2 := iobuf.ArrayFromSlice[iobuf.PicoBuffer](data, 16)
 		if arr2[0] != data[16] {
-			t.Errorf("PicoArrayFromSlice offset 16 [0] = %d, want %d", arr2[0], data[16])
+			t.Errorf("ArrayFromSlice[PicoBuffer] offset 16 [0] = %d, want %d", arr2[0], data[16])
 		}
 	})
 
-	t.Run("NanoArrayFromSlice", func(t *testing.T) {
-		arr := iobuf.NanoArrayFromSlice(data, 0)
+	t.Run("NanoBuffer", func(t *testing.T) {
+		arr := iobuf.ArrayFromSlice[iobuf.NanoBuffer](data, 0)
 		if arr[0] != data[0] {
-			t.Errorf("NanoArrayFromSlice[0] = %d, want %d", arr[0], data[0])
+			t.Errorf("ArrayFromSlice[NanoBuffer][0] = %d, want %d", arr[0], data[0])
 		}
 	})
 
-	t.Run("MicroArrayFromSlice", func(t *testing.T) {
-		arr := iobuf.MicroArrayFromSlice(data, 0)
+	t.Run("MicroBuffer", func(t *testing.T) {
+		arr := iobuf.ArrayFromSlice[iobuf.MicroBuffer](data, 0)
 		if arr[0] != data[0] {
-			t.Errorf("MicroArrayFromSlice[0] = %d, want %d", arr[0], data[0])
+			t.Errorf("ArrayFromSlice[MicroBuffer][0] = %d, want %d", arr[0], data[0])
 		}
 	})
 
-	t.Run("SmallArrayFromSlice", func(t *testing.T) {
-		arr := iobuf.SmallArrayFromSlice(data, 0)
+	t.Run("SmallBuffer", func(t *testing.T) {
+		arr := iobuf.ArrayFromSlice[iobuf.SmallBuffer](data, 0)
 		if arr[0] != data[0] {
-			t.Errorf("SmallArrayFromSlice[0] = %d, want %d", arr[0], data[0])
+			t.Errorf("ArrayFromSlice[SmallBuffer][0] = %d, want %d", arr[0], data[0])
 		}
 	})
 
-	t.Run("MediumArrayFromSlice", func(t *testing.T) {
-		arr := iobuf.MediumArrayFromSlice(data, 0)
+	t.Run("MediumBuffer", func(t *testing.T) {
+		arr := iobuf.ArrayFromSlice[iobuf.MediumBuffer](data, 0)
 		if arr[0] != data[0] {
-			t.Errorf("MediumArrayFromSlice[0] = %d, want %d", arr[0], data[0])
+			t.Errorf("ArrayFromSlice[MediumBuffer][0] = %d, want %d", arr[0], data[0])
 		}
 	})
 
-	t.Run("LargeArrayFromSlice", func(t *testing.T) {
-		arr := iobuf.LargeArrayFromSlice(data, 0)
+	t.Run("BigBuffer", func(t *testing.T) {
+		arr := iobuf.ArrayFromSlice[iobuf.BigBuffer](data, 0)
 		if arr[0] != data[0] {
-			t.Errorf("LargeArrayFromSlice[0] = %d, want %d", arr[0], data[0])
+			t.Errorf("ArrayFromSlice[BigBuffer][0] = %d, want %d", arr[0], data[0])
 		}
 	})
 
-	t.Run("HugeArrayFromSlice", func(t *testing.T) {
-		arr := iobuf.HugeArrayFromSlice(data, 0)
+	t.Run("LargeBuffer", func(t *testing.T) {
+		arr := iobuf.ArrayFromSlice[iobuf.LargeBuffer](data, 0)
 		if arr[0] != data[0] {
-			t.Errorf("HugeArrayFromSlice[0] = %d, want %d", arr[0], data[0])
+			t.Errorf("ArrayFromSlice[LargeBuffer][0] = %d, want %d", arr[0], data[0])
 		}
 	})
 
-	t.Run("GiantArrayFromSlice", func(t *testing.T) {
-		arr := iobuf.GiantArrayFromSlice(data, 0)
+	t.Run("GreatBuffer", func(t *testing.T) {
+		arr := iobuf.ArrayFromSlice[iobuf.GreatBuffer](data, 0)
 		if arr[0] != data[0] {
-			t.Errorf("GiantArrayFromSlice[0] = %d, want %d", arr[0], data[0])
+			t.Errorf("ArrayFromSlice[GreatBuffer][0] = %d, want %d", arr[0], data[0])
 		}
 	})
 
-	t.Run("BigArrayFromSlice", func(t *testing.T) {
-		arr := iobuf.BigArrayFromSlice(data, 0)
+	t.Run("HugeBuffer", func(t *testing.T) {
+		arr := iobuf.ArrayFromSlice[iobuf.HugeBuffer](data, 0)
 		if arr[0] != data[0] {
-			t.Errorf("BigArrayFromSlice[0] = %d, want %d", arr[0], data[0])
+			t.Errorf("ArrayFromSlice[HugeBuffer][0] = %d, want %d", arr[0], data[0])
 		}
 	})
 
-	t.Run("GreatArrayFromSlice", func(t *testing.T) {
-		arr := iobuf.GreatArrayFromSlice(data, 0)
+	t.Run("VastBuffer", func(t *testing.T) {
+		arr := iobuf.ArrayFromSlice[iobuf.VastBuffer](data, 0)
 		if arr[0] != data[0] {
-			t.Errorf("GreatArrayFromSlice[0] = %d, want %d", arr[0], data[0])
+			t.Errorf("ArrayFromSlice[VastBuffer][0] = %d, want %d", arr[0], data[0])
 		}
 	})
 
-	t.Run("VastArrayFromSlice", func(t *testing.T) {
-		arr := iobuf.VastArrayFromSlice(data, 0)
+	t.Run("GiantBuffer", func(t *testing.T) {
+		arr := iobuf.ArrayFromSlice[iobuf.GiantBuffer](data, 0)
 		if arr[0] != data[0] {
-			t.Errorf("VastArrayFromSlice[0] = %d, want %d", arr[0], data[0])
+			t.Errorf("ArrayFromSlice[GiantBuffer][0] = %d, want %d", arr[0], data[0])
 		}
 	})
 
-	t.Run("TitanArrayFromSlice", func(t *testing.T) {
+	t.Run("TitanBuffer", func(t *testing.T) {
 		data := make([]byte, iobuf.BufferSizeTitan*2)
 		data[0] = 0xAB
 		data[iobuf.BufferSizeTitan] = 0xCD
-		arr := iobuf.TitanArrayFromSlice(data, 0)
+		arr := iobuf.ArrayFromSlice[iobuf.TitanBuffer](data, 0)
 		if arr[0] != 0xAB {
-			t.Errorf("TitanArrayFromSlice[0] = %d, want 0xAB", arr[0])
+			t.Errorf("ArrayFromSlice[TitanBuffer][0] = %d, want 0xAB", arr[0])
 		}
-		arr2 := iobuf.TitanArrayFromSlice(data, iobuf.BufferSizeTitan)
+		arr2 := iobuf.ArrayFromSlice[iobuf.TitanBuffer](data, iobuf.BufferSizeTitan)
 		if arr2[0] != 0xCD {
-			t.Errorf("TitanArrayFromSlice offset [0] = %d, want 0xCD", arr2[0])
+			t.Errorf("ArrayFromSlice[TitanBuffer] offset [0] = %d, want 0xCD", arr2[0])
 		}
 	})
 }
@@ -500,99 +500,99 @@ func TestSliceOfArray(t *testing.T) {
 		data[i] = byte(i % 256)
 	}
 
-	t.Run("SliceOfPicoArray", func(t *testing.T) {
-		arr := iobuf.SliceOfPicoArray(data, 0, 4)
+	t.Run("PicoBuffer", func(t *testing.T) {
+		arr := iobuf.SliceOfArray[iobuf.PicoBuffer](data, 0, 4)
 		if len(arr) != 4 {
-			t.Errorf("SliceOfPicoArray len = %d, want 4", len(arr))
+			t.Errorf("SliceOfArray[PicoBuffer] len = %d, want 4", len(arr))
 		}
 		if arr[0][0] != data[0] {
-			t.Errorf("SliceOfPicoArray[0][0] = %d, want %d", arr[0][0], data[0])
+			t.Errorf("SliceOfArray[PicoBuffer][0][0] = %d, want %d", arr[0][0], data[0])
 		}
 	})
 
-	t.Run("SliceOfNanoArray", func(t *testing.T) {
-		arr := iobuf.SliceOfNanoArray(data, 0, 4)
+	t.Run("NanoBuffer", func(t *testing.T) {
+		arr := iobuf.SliceOfArray[iobuf.NanoBuffer](data, 0, 4)
 		if len(arr) != 4 {
-			t.Errorf("SliceOfNanoArray len = %d, want 4", len(arr))
+			t.Errorf("SliceOfArray[NanoBuffer] len = %d, want 4", len(arr))
 		}
 	})
 
-	t.Run("SliceOfMicroArray", func(t *testing.T) {
-		arr := iobuf.SliceOfMicroArray(data, 0, 4)
+	t.Run("MicroBuffer", func(t *testing.T) {
+		arr := iobuf.SliceOfArray[iobuf.MicroBuffer](data, 0, 4)
 		if len(arr) != 4 {
-			t.Errorf("SliceOfMicroArray len = %d, want 4", len(arr))
+			t.Errorf("SliceOfArray[MicroBuffer] len = %d, want 4", len(arr))
 		}
 	})
 
-	t.Run("SliceOfSmallArray", func(t *testing.T) {
-		arr := iobuf.SliceOfSmallArray(data, 0, 4)
+	t.Run("SmallBuffer", func(t *testing.T) {
+		arr := iobuf.SliceOfArray[iobuf.SmallBuffer](data, 0, 4)
 		if len(arr) != 4 {
-			t.Errorf("SliceOfSmallArray len = %d, want 4", len(arr))
+			t.Errorf("SliceOfArray[SmallBuffer] len = %d, want 4", len(arr))
 		}
 	})
 
-	t.Run("SliceOfMediumArray", func(t *testing.T) {
-		arr := iobuf.SliceOfMediumArray(data, 0, 4)
+	t.Run("MediumBuffer", func(t *testing.T) {
+		arr := iobuf.SliceOfArray[iobuf.MediumBuffer](data, 0, 4)
 		if len(arr) != 4 {
-			t.Errorf("SliceOfMediumArray len = %d, want 4", len(arr))
+			t.Errorf("SliceOfArray[MediumBuffer] len = %d, want 4", len(arr))
 		}
 	})
 
-	t.Run("SliceOfLargeArray", func(t *testing.T) {
-		arr := iobuf.SliceOfLargeArray(data, 0, 4)
+	t.Run("BigBuffer", func(t *testing.T) {
+		arr := iobuf.SliceOfArray[iobuf.BigBuffer](data, 0, 4)
 		if len(arr) != 4 {
-			t.Errorf("SliceOfLargeArray len = %d, want 4", len(arr))
+			t.Errorf("SliceOfArray[BigBuffer] len = %d, want 4", len(arr))
 		}
 	})
 
-	t.Run("SliceOfHugeArray", func(t *testing.T) {
-		arr := iobuf.SliceOfHugeArray(data, 0, 4)
+	t.Run("LargeBuffer", func(t *testing.T) {
+		arr := iobuf.SliceOfArray[iobuf.LargeBuffer](data, 0, 4)
 		if len(arr) != 4 {
-			t.Errorf("SliceOfHugeArray len = %d, want 4", len(arr))
+			t.Errorf("SliceOfArray[LargeBuffer] len = %d, want 4", len(arr))
 		}
 	})
 
-	t.Run("SliceOfGiantArray", func(t *testing.T) {
-		arr := iobuf.SliceOfGiantArray(data, 0, 4)
+	t.Run("GreatBuffer", func(t *testing.T) {
+		arr := iobuf.SliceOfArray[iobuf.GreatBuffer](data, 0, 4)
 		if len(arr) != 4 {
-			t.Errorf("SliceOfGiantArray len = %d, want 4", len(arr))
+			t.Errorf("SliceOfArray[GreatBuffer] len = %d, want 4", len(arr))
 		}
 	})
 
-	t.Run("SliceOfBigArray", func(t *testing.T) {
-		arr := iobuf.SliceOfBigArray(data, 0, 4)
+	t.Run("HugeBuffer", func(t *testing.T) {
+		arr := iobuf.SliceOfArray[iobuf.HugeBuffer](data, 0, 4)
 		if len(arr) != 4 {
-			t.Errorf("SliceOfBigArray len = %d, want 4", len(arr))
+			t.Errorf("SliceOfArray[HugeBuffer] len = %d, want 4", len(arr))
 		}
 	})
 
-	t.Run("SliceOfGreatArray", func(t *testing.T) {
-		arr := iobuf.SliceOfGreatArray(data, 0, 4)
+	t.Run("VastBuffer", func(t *testing.T) {
+		arr := iobuf.SliceOfArray[iobuf.VastBuffer](data, 0, 4)
 		if len(arr) != 4 {
-			t.Errorf("SliceOfGreatArray len = %d, want 4", len(arr))
+			t.Errorf("SliceOfArray[VastBuffer] len = %d, want 4", len(arr))
 		}
 	})
 
-	t.Run("SliceOfVastArray", func(t *testing.T) {
-		arr := iobuf.SliceOfVastArray(data, 0, 4)
+	t.Run("GiantBuffer", func(t *testing.T) {
+		arr := iobuf.SliceOfArray[iobuf.GiantBuffer](data, 0, 4)
 		if len(arr) != 4 {
-			t.Errorf("SliceOfVastArray len = %d, want 4", len(arr))
+			t.Errorf("SliceOfArray[GiantBuffer] len = %d, want 4", len(arr))
 		}
 	})
 
-	t.Run("SliceOfTitanArray", func(t *testing.T) {
+	t.Run("TitanBuffer", func(t *testing.T) {
 		data := make([]byte, iobuf.BufferSizeTitan*2)
 		data[0] = 0xAB
 		data[iobuf.BufferSizeTitan] = 0xCD
-		arr := iobuf.SliceOfTitanArray(data, 0, 2)
+		arr := iobuf.SliceOfArray[iobuf.TitanBuffer](data, 0, 2)
 		if len(arr) != 2 {
-			t.Errorf("SliceOfTitanArray len = %d, want 2", len(arr))
+			t.Errorf("SliceOfArray[TitanBuffer] len = %d, want 2", len(arr))
 		}
 		if arr[0][0] != 0xAB {
-			t.Errorf("SliceOfTitanArray[0][0] = %d, want 0xAB", arr[0][0])
+			t.Errorf("SliceOfArray[TitanBuffer][0][0] = %d, want 0xAB", arr[0][0])
 		}
 		if arr[1][0] != 0xCD {
-			t.Errorf("SliceOfTitanArray[1][0] = %d, want 0xCD", arr[1][0])
+			t.Errorf("SliceOfArray[TitanBuffer][1][0] = %d, want 0xCD", arr[1][0])
 		}
 	})
 }
@@ -600,31 +600,23 @@ func TestSliceOfArray(t *testing.T) {
 func TestSliceOfArray_Panic(t *testing.T) {
 	data := make([]byte, 1024)
 
-	testCases := []struct {
-		name string
-		fn   func()
-	}{
-		{"SliceOfPicoArray_n0", func() { iobuf.SliceOfPicoArray(data, 0, 0) }},
-		{"SliceOfPicoArray_nNeg", func() { iobuf.SliceOfPicoArray(data, 0, -1) }},
-		{"SliceOfNanoArray_n0", func() { iobuf.SliceOfNanoArray(data, 0, 0) }},
-		{"SliceOfMicroArray_n0", func() { iobuf.SliceOfMicroArray(data, 0, 0) }},
-		{"SliceOfSmallArray_n0", func() { iobuf.SliceOfSmallArray(data, 0, 0) }},
-		{"SliceOfMediumArray_n0", func() { iobuf.SliceOfMediumArray(data, 0, 0) }},
-		{"SliceOfLargeArray_n0", func() { iobuf.SliceOfLargeArray(data, 0, 0) }},
-		{"SliceOfHugeArray_n0", func() { iobuf.SliceOfHugeArray(data, 0, 0) }},
-		{"SliceOfGiantArray_n0", func() { iobuf.SliceOfGiantArray(data, 0, 0) }},
-	}
+	t.Run("n0", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Error("SliceOfArray[PicoBuffer] with n=0 did not panic")
+			}
+		}()
+		iobuf.SliceOfArray[iobuf.PicoBuffer](data, 0, 0)
+	})
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			defer func() {
-				if r := recover(); r == nil {
-					t.Errorf("%s did not panic", tc.name)
-				}
-			}()
-			tc.fn()
-		})
-	}
+	t.Run("nNeg", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Error("SliceOfArray[PicoBuffer] with n=-1 did not panic")
+			}
+		}()
+		iobuf.SliceOfArray[iobuf.PicoBuffer](data, 0, -1)
+	})
 }
 
 func TestTierBySize(t *testing.T) {
@@ -836,33 +828,4 @@ func TestCacheLineAlignedMemBlocks_Panic(t *testing.T) {
 		}
 	}()
 	_ = iobuf.CacheLineAlignedMemBlocks(0, 64)
-}
-
-func TestSliceOfArray_Panic_Extended(t *testing.T) {
-	data := make([]byte, iobuf.BufferSizeTitan*2)
-
-	testCases := []struct {
-		name string
-		fn   func()
-	}{
-		{"SliceOfBigArray_n0", func() { iobuf.SliceOfBigArray(data, 0, 0) }},
-		{"SliceOfBigArray_nNeg", func() { iobuf.SliceOfBigArray(data, 0, -1) }},
-		{"SliceOfGreatArray_n0", func() { iobuf.SliceOfGreatArray(data, 0, 0) }},
-		{"SliceOfGreatArray_nNeg", func() { iobuf.SliceOfGreatArray(data, 0, -1) }},
-		{"SliceOfVastArray_n0", func() { iobuf.SliceOfVastArray(data, 0, 0) }},
-		{"SliceOfVastArray_nNeg", func() { iobuf.SliceOfVastArray(data, 0, -1) }},
-		{"SliceOfTitanArray_n0", func() { iobuf.SliceOfTitanArray(data, 0, 0) }},
-		{"SliceOfTitanArray_nNeg", func() { iobuf.SliceOfTitanArray(data, 0, -1) }},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			defer func() {
-				if r := recover(); r == nil {
-					t.Errorf("%s did not panic", tc.name)
-				}
-			}()
-			tc.fn()
-		})
-	}
 }

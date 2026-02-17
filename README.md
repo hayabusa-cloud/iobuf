@@ -26,7 +26,7 @@ English | [简体中文](README.zh-CN.md) | [Español](README.es.md) | [日本�
 
 ## Requirements
 
-- **Go 1.25+**
+- **Go 1.26+**
 - **64-bit CPU** (amd64, arm64, riscv64, loong64, ppc64, s390x, mips64, etc.)
 
 > **Note:** 32-bit architectures are not supported due to 64-bit atomic operations in the lock-free pool implementation.

@@ -1,8 +1,8 @@
 module code.hybscloud.com/iobuf
 
-go 1.25
+go 1.26
 
 require (
-	code.hybscloud.com/iox v0.3.2
-	code.hybscloud.com/spin v0.1.4
+	code.hybscloud.com/iox v0.3.3
+	code.hybscloud.com/spin v0.1.5
 )
