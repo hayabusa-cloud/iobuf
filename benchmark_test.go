@@ -128,7 +128,7 @@ func BenchmarkIoVecFromBytesSlice_8(b *testing.B) {
 	}
 	b.ResetTimer()
 	for range b.N {
-		_, _ = iobuf.IoVecFromBytesSlice(slices)
+		_ = iobuf.IoVecFromBytesSlice(slices)
 	}
 }
 

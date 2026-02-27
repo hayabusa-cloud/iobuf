@@ -15,9 +15,9 @@ const registerBufferSize = iobuf.BufferSizeLarge
 
 func TestIoVecFromBytesSlice(t *testing.T) {
 	t.Run("empty slice", func(t *testing.T) {
-		addr, n := iobuf.IoVecFromBytesSlice(nil)
-		if addr != 0 || n != 0 {
-			t.Errorf("expected (0, 0), got (%d, %d)", addr, n)
+		vec := iobuf.IoVecFromBytesSlice(nil)
+		if vec != nil {
+			t.Errorf("expected nil, got %v", vec)
 		}
 	})
 
@@ -25,12 +25,15 @@ func TestIoVecFromBytesSlice(t *testing.T) {
 		buf := make([]byte, 128)
 		buf[0] = 0xAB
 		iov := [][]byte{buf}
-		addr, n := iobuf.IoVecFromBytesSlice(iov)
-		if n != 1 {
-			t.Errorf("expected n=1, got %d", n)
+		vec := iobuf.IoVecFromBytesSlice(iov)
+		if len(vec) != 1 {
+			t.Errorf("expected len=1, got %d", len(vec))
 		}
-		if addr == 0 {
-			t.Error("expected non-zero address")
+		if vec[0].Base != unsafe.SliceData(buf) {
+			t.Error("expected Base to point to buf")
+		}
+		if vec[0].Len != 128 {
+			t.Errorf("expected Len=128, got %d", vec[0].Len)
 		}
 	})
 
@@ -40,12 +43,15 @@ func TestIoVecFromBytesSlice(t *testing.T) {
 			make([]byte, 128),
 			make([]byte, 256),
 		}
-		addr, n := iobuf.IoVecFromBytesSlice(bufs)
-		if n != 3 {
-			t.Errorf("expected n=3, got %d", n)
+		vec := iobuf.IoVecFromBytesSlice(bufs)
+		if len(vec) != 3 {
+			t.Errorf("expected len=3, got %d", len(vec))
 		}
-		if addr == 0 {
-			t.Error("expected non-zero address")
+		expectedLens := []uint64{64, 128, 256}
+		for i, v := range vec {
+			if v.Len != expectedLens[i] {
+				t.Errorf("vec[%d].Len = %d, expected %d", i, v.Len, expectedLens[i])
+			}
 		}
 	})
 }

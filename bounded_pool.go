@@ -228,6 +228,9 @@ func (pool *BoundedPool[T]) Fill(newFunc func() T) {
 //	pool := NewBoundedPool[ItemType](capacity)
 //	pool.SetNonblock(true)
 //
+// SetNonblock must be called during the initialization phase, before
+// the pool is shared across goroutines. It is not safe for concurrent use.
+//
 // Parameters:
 //
 //	nonblocking - determines whether the pool operates in non-blocking mode (true) or blocking mode (false).
