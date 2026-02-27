@@ -27,23 +27,20 @@ type IoVec struct {
 	Len  uint64 // Number of bytes to transfer
 }
 
-// IoVecFromBytesSlice converts a slice of byte slices to a pointer and count
-// suitable for io_uring buffer registration (IORING_REGISTER_BUFFERS2).
-// Returns the address of the first IoVec element and the number of elements.
+// IoVecFromBytesSlice converts a slice of byte slices to an IoVec slice
+// suitable for vectored I/O and io_uring buffer registration.
 //
-// Note: The returned address points to a newly allocated []IoVec slice.
-// The caller must ensure the input slices remain valid for the lifetime
-// of the registration.
-func IoVecFromBytesSlice(iov [][]byte) (addr uintptr, n int) {
+// The caller must ensure the input byte slices remain valid for the
+// lifetime of any I/O operation using the returned IoVec slice.
+func IoVecFromBytesSlice(iov [][]byte) []IoVec {
 	if len(iov) == 0 {
-		return 0, 0
+		return nil
 	}
 	vec := make([]IoVec, len(iov))
 	for i := range iov {
 		vec[i] = IoVec{Base: unsafe.SliceData(iov[i]), Len: uint64(len(iov[i]))}
 	}
-	addr, n = uintptr(unsafe.Pointer(unsafe.SliceData(vec))), len(vec)
-	return
+	return vec
 }
 
 // IoVecAddrLen extracts the raw pointer and length from an IoVec slice
