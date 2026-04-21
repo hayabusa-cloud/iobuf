@@ -203,6 +203,22 @@ func TestNewBoundedPool_InvalidCapacity(t *testing.T) {
 		}()
 		_ = iobuf.NewBoundedPool[int](-1)
 	})
+
+	t.Run("rounded capacity too large", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Error("NewBoundedPool(1<<31 + 1) did not panic")
+			}
+		}()
+		_ = iobuf.NewBoundedPool[struct{}](1<<31 + 1)
+	})
+}
+
+func TestNewBoundedPool_MaxRepresentableCapacity(t *testing.T) {
+	pool := iobuf.NewBoundedPool[struct{}](1 << 31)
+	if pool.Cap() != 1<<31 {
+		t.Fatalf("Cap() = %d, want %d", pool.Cap(), 1<<31)
+	}
 }
 
 func TestBoundedPool_Value_PanicUnfilled(t *testing.T) {
