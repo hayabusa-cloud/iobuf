@@ -40,7 +40,7 @@
 //   - Lock-free: Uses atomic CAS operations, no mutexes
 //   - Bounded: Fixed capacity rounded to power of two
 //   - Memory-efficient: Single contiguous array, no per-element allocation
-//   - Cache-optimized: Aligned to cache line boundaries to prevent false sharing
+//   - Cache-optimized: Slot remapping spreads adjacent cursors across cache lines
 //
 // # Indirect Pool Pattern
 //
