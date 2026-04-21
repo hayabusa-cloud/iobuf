@@ -5,7 +5,6 @@
 package iobuf
 
 import (
-	"math"
 	"sync/atomic"
 	"unsafe"
 
@@ -42,73 +41,73 @@ type (
 )
 
 // NewPicoBufferPool creates a new instance of PicoBufferBoundedPool with the specified capacity.
-// The capacity must be between 1 and math.MaxUint32 and will be rounded up to the next power of two.
+// The capacity must be at least 1 and must round to no more than 1<<31.
 func NewPicoBufferPool(capacity int) *PicoBufferBoundedPool {
 	return NewBoundedPool[PicoBuffer](capacity)
 }
 
 // NewNanoBufferPool creates a new instance of NanoBufferBoundedPool with the specified capacity.
-// The capacity must be between 1 and math.MaxUint32 and will be rounded up to the next power of two.
+// The capacity must be at least 1 and must round to no more than 1<<31.
 func NewNanoBufferPool(capacity int) *NanoBufferBoundedPool {
 	return NewBoundedPool[NanoBuffer](capacity)
 }
 
 // NewMicroBufferPool creates a new instance of MicroBufferBoundedPool with the specified capacity.
-// The capacity must be between 1 and math.MaxUint32 and will be rounded up to the next power of two.
+// The capacity must be at least 1 and must round to no more than 1<<31.
 func NewMicroBufferPool(capacity int) *MicroBufferBoundedPool {
 	return NewBoundedPool[MicroBuffer](capacity)
 }
 
 // NewSmallBufferPool creates a new instance of SmallBufferBoundedPool with the specified capacity.
-// The capacity must be between 1 and math.MaxUint32 and will be rounded up to the next power of two.
+// The capacity must be at least 1 and must round to no more than 1<<31.
 func NewSmallBufferPool(capacity int) *SmallBufferBoundedPool {
 	return NewBoundedPool[SmallBuffer](capacity)
 }
 
 // NewMediumBufferPool creates a new instance of MediumBufferBoundedPool with the specified capacity.
-// The capacity must be between 1 and math.MaxUint32 and will be rounded up to the next power of two.
+// The capacity must be at least 1 and must round to no more than 1<<31.
 func NewMediumBufferPool(capacity int) *MediumBufferBoundedPool {
 	return NewBoundedPool[MediumBuffer](capacity)
 }
 
 // NewBigBufferPool creates a new instance of BigBufferBoundedPool with the specified capacity.
-// The capacity must be between 1 and math.MaxUint32 and will be rounded up to the next power of two.
+// The capacity must be at least 1 and must round to no more than 1<<31.
 func NewBigBufferPool(capacity int) *BigBufferBoundedPool {
 	return NewBoundedPool[BigBuffer](capacity)
 }
 
 // NewLargeBufferPool creates a new instance of LargeBufferBoundedPool with the specified capacity.
-// The capacity must be between 1 and math.MaxUint32 and will be rounded up to the next power of two.
+// The capacity must be at least 1 and must round to no more than 1<<31.
 func NewLargeBufferPool(capacity int) *LargeBufferBoundedPool {
 	return NewBoundedPool[LargeBuffer](capacity)
 }
 
 // NewGreatBufferPool creates a new instance of GreatBufferBoundedPool with the specified capacity.
-// The capacity must be between 1 and math.MaxUint32 and will be rounded up to the next power of two.
+// The capacity must be at least 1 and must round to no more than 1<<31.
 func NewGreatBufferPool(capacity int) *GreatBufferBoundedPool {
 	return NewBoundedPool[GreatBuffer](capacity)
 }
 
 // NewHugeBufferPool creates a new instance of HugeBufferBoundedPool with the specified capacity.
-// The capacity must be between 1 and math.MaxUint32 and will be rounded up to the next power of two.
+// The capacity must be at least 1 and must round to no more than 1<<31.
 func NewHugeBufferPool(capacity int) *HugeBufferBoundedPool {
 	return NewBoundedPool[HugeBuffer](capacity)
 }
 
 // NewVastBufferPool creates a new instance of VastBufferBoundedPool with the specified capacity.
-// The capacity must be between 1 and math.MaxUint32 and will be rounded up to the next power of two.
+// The capacity must be at least 1 and must round to no more than 1<<31.
 func NewVastBufferPool(capacity int) *VastBufferBoundedPool {
 	return NewBoundedPool[VastBuffer](capacity)
 }
 
 // NewGiantBufferPool creates a new instance of GiantBufferBoundedPool with the specified capacity.
-// The capacity must be between 1 and math.MaxUint32 and will be rounded up to the next power of two.
+// The capacity must be at least 1 and must round to no more than 1<<31.
 func NewGiantBufferPool(capacity int) *GiantBufferBoundedPool {
 	return NewBoundedPool[GiantBuffer](capacity)
 }
 
 // NewTitanBufferPool creates a new instance of TitanBufferBoundedPool with the specified capacity.
-// The capacity must be between 1 and math.MaxUint32 and will be rounded up to the next power of two.
+// The capacity must be at least 1 and must round to no more than 1<<31.
 func NewTitanBufferPool(capacity int) *TitanBufferBoundedPool {
 	return NewBoundedPool[TitanBuffer](capacity)
 }
@@ -124,12 +123,12 @@ type BoundedPoolItem = any
 // The capacity is rounded up to the next power of two for efficient index
 // calculation. The actual capacity can be retrieved via Cap().
 //
-// Panics if capacity < 1 or capacity > math.MaxUint32.
+// Panics if capacity < 1 or if rounding would exceed 1<<31.
 //
 // After creation, Fill must be called before Get/Put operations.
 func NewBoundedPool[ItemType BoundedPoolItem](capacity int) *BoundedPool[ItemType] {
-	if capacity < 1 || capacity > math.MaxUint32 {
-		panic("capacity must be between 1 and MaxUint32")
+	if capacity < 1 {
+		panic("capacity must be at least 1")
 	}
 	capacity--
 	capacity |= capacity >> 1
@@ -138,6 +137,9 @@ func NewBoundedPool[ItemType BoundedPoolItem](capacity int) *BoundedPool[ItemTyp
 	capacity |= capacity >> 8
 	capacity |= capacity >> 16
 	capacity++
+	if capacity > boundedPoolMaxCapacity {
+		panic("capacity must round to no more than 1<<31")
+	}
 
 	items := make([]ItemType, 0, capacity)
 
@@ -340,6 +342,7 @@ func (pool *BoundedPool[T]) Cap() int {
 // Internal constants for the lock-free FIFO algorithm.
 // Entry format: [turn:30][reserved:2][empty:1][index:31]
 const (
+	boundedPoolMaxCapacity   = 1 << 31                       // Largest representable rounded capacity
 	boundedPoolEntryEmpty    = 1 << 62                       // Marks slot as empty
 	boundedPoolEntryTurnMask = boundedPoolEntryEmpty>>32 - 1 // Mask for turn counter
 )
