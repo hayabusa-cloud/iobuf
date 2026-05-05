@@ -54,13 +54,13 @@
 //
 //	pool := NewSmallBufferPool(100) // Creates pool with ~128 capacity
 //	pool.Fill(NewSmallBuffer)       // Initialize with buffer factory
-//	idx, err := pool.Get()          // Acquire buffer index
-//	if err != nil {
-//	    // Handle iox.ErrWouldBlock (pool empty)
-//	}
+//	idx, _ := pool.Get()            // Acquire buffer index; default mode blocks
 //	buf := pool.Value(idx)          // Access buffer by index
 //	// Use buf[:]...
 //	pool.Put(idx)                   // Return buffer to pool
+//
+// Call SetNonblock(true) during initialization if empty/full frontiers should
+// return iox.ErrWouldBlock instead of waiting.
 //
 // # Page-Aligned Memory
 //

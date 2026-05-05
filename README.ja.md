@@ -151,7 +151,7 @@ func AlignedMemBlock() []byte
 
 ```go
 func IoVecFrom[T BufferType](buffers []T) []IoVec
-func IoVecFromBytesSlice(iov [][]byte) (addr uintptr, n int)
+func IoVecFromBytesSlice(iov [][]byte) []IoVec
 func IoVecFromRegisteredBuffers(buffers []RegisterBuffer) []IoVec
 func IoVecAddrLen(vec []IoVec) (addr uintptr, n int)
 ```
