@@ -90,8 +90,7 @@ func TestBoundedPool_NonblockingFull(t *testing.T) {
 
 func TestBoundedPool_Concurrent(t *testing.T) {
 	const capacity = 64
-	const goroutines = 16
-	const iterations = 2000
+	goroutines, iterations := boundedPoolStressWorkload(16, 2000, 4, 64)
 
 	pool := iobuf.NewBoundedPool[int](capacity)
 	pool.Fill(func() int { return 0 })
@@ -126,8 +125,7 @@ func TestBoundedPool_Concurrent(t *testing.T) {
 func TestBoundedPool_HighContention(t *testing.T) {
 	// High contention test with many goroutines on small pool
 	const capacity = 8
-	const goroutines = 16
-	const iterations = 2000
+	goroutines, iterations := boundedPoolStressWorkload(16, 2000, 4, 64)
 
 	pool := iobuf.NewBoundedPool[int](capacity)
 	pool.Fill(func() int { return 0 })
@@ -554,13 +552,13 @@ func TestNewTierBufferPools(t *testing.T) {
 	})
 
 	t.Run("NewTitanBufferPool", func(t *testing.T) {
-		if raceEnabled {
-			t.Skip("TitanBuffer (128 MiB) skipped in race mode due to stack overhead")
-		}
 		const smallCap = 1 // Use minimal capacity for large buffers
 		pool := iobuf.NewTitanBufferPool(smallCap)
 		if pool.Cap() != smallCap {
 			t.Errorf("NewTitanBufferPool capacity = %d, want %d", pool.Cap(), smallCap)
+		}
+		if raceEnabled {
+			t.Skip("TitanBuffer Fill/Value skipped in race mode due to stack overhead")
 		}
 		pool.Fill(iobuf.NewTitanBuffer)
 		idx, err := pool.Get()
@@ -575,6 +573,8 @@ func TestNewTierBufferPools(t *testing.T) {
 }
 
 func TestBoundedPool_PutContention(t *testing.T) {
+	skipLockFreeStressUnderRace(t)
+
 	// Stress test targeting the tryPut retry path (line 384-386 in bounded_pool.go).
 	// When many goroutines try to Put simultaneously on a nearly-full pool,
 	// the tail can change between atomic loads, triggering the retry branch.
@@ -590,7 +590,7 @@ func TestBoundedPool_PutContention(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(goroutines)
 
-	// All goroutines race to Get/Put, creating contention
+	// All goroutines contend on Get/Put, creating retry pressure.
 	for g := range goroutines {
 		go func(id int) {
 			defer wg.Done()
@@ -601,7 +601,7 @@ func TestBoundedPool_PutContention(t *testing.T) {
 					spin.Yield()
 					continue
 				}
-				// Immediately try to put it back, racing with other goroutines
+				// Immediately try to put it back, contending with other goroutines.
 				_ = pool.Put(idx)
 			}
 		}(g)
@@ -611,6 +611,8 @@ func TestBoundedPool_PutContention(t *testing.T) {
 }
 
 func TestBoundedPool_ExtremeContention(t *testing.T) {
+	skipLockFreeStressUnderRace(t)
+
 	// Ultra-high contention test with tiny pool and many goroutines.
 	// This maximizes the probability of hitting lock-free retry paths.
 	// Uses nonblocking mode to avoid Backoff delays.
@@ -641,6 +643,20 @@ func TestBoundedPool_ExtremeContention(t *testing.T) {
 	}
 
 	wg.Wait()
+}
+
+func boundedPoolStressWorkload(goroutines, iterations, raceGoroutines, raceIterations int) (int, int) {
+	if raceEnabled {
+		return raceGoroutines, raceIterations
+	}
+	return goroutines, iterations
+}
+
+func skipLockFreeStressUnderRace(t *testing.T) {
+	t.Helper()
+	if raceEnabled {
+		t.Skip("lock-free contention stress is validated without race instrumentation")
+	}
 }
 
 func TestBoundedPool_CapacityRounding(t *testing.T) {
