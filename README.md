@@ -2,6 +2,7 @@
 
 [![Go Reference](https://pkg.go.dev/badge/code.hybscloud.com/iobuf.svg)](https://pkg.go.dev/code.hybscloud.com/iobuf)
 [![codecov](https://codecov.io/gh/hayabusa-cloud/iobuf/branch/main/graph/badge.svg)](https://codecov.io/gh/hayabusa-cloud/iobuf)
+[![Benchmarks](https://github.com/hayabusa-cloud/iobuf/actions/workflows/benchmarks.yml/badge.svg)](https://github.com/hayabusa-cloud/iobuf/actions/workflows/benchmarks.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Lock-free, memory-friendly bounded buffer pools for Go optimized for low-latency systems.
@@ -170,6 +171,8 @@ The bounded pool implementation is based on lock-free queue algorithms:
 
 - **Memory-efficient**: O(n) space for n-capacity pool
 - **Cache-friendly**: Minimizes false sharing and cache-line bouncing
+
+[Measuring pool performance](BENCHMARKS.md)
 
 ## References
 

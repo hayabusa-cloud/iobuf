@@ -143,24 +143,51 @@ func BenchmarkIoVecAddrLen(b *testing.B) {
 
 // Buffer value access benchmarks
 
-func BenchmarkPool_Value(b *testing.B) {
-	pool := iobuf.NewSmallBufferPool(1024)
-	pool.Fill(iobuf.NewSmallBuffer)
+func benchmarkOwnedBuffers(b *testing.B) (*iobuf.SmallBufferBoundedPool, *[1024]int) {
+	var slots [1024]int
+	pool := iobuf.NewSmallBufferPool(len(slots))
+	pool.Fill(func() iobuf.SmallBuffer { return iobuf.SmallBuffer{1} })
+	for i := range slots {
+		index, err := pool.Get()
+		if err != nil {
+			b.Fatal(err)
+		}
+		slots[i] = index
+	}
+	b.Cleanup(func() {
+		for _, index := range slots {
+			if err := pool.Put(index); err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
+	return pool, &slots
+}
 
-	b.ResetTimer()
-	for i := range b.N {
-		_ = pool.Value(i % 1024)
+func BenchmarkPool_Value(b *testing.B) {
+	pool, slots := benchmarkOwnedBuffers(b)
+	var got iobuf.SmallBuffer
+	var i int
+	for b.Loop() {
+		got = pool.Value(slots[i%len(slots)])
+		i++
+	}
+	if got != (iobuf.SmallBuffer{1}) {
+		b.Fatal("incorrect buffer value")
 	}
 }
 
 func BenchmarkPool_SetValue(b *testing.B) {
-	pool := iobuf.NewSmallBufferPool(1024)
-	pool.Fill(iobuf.NewSmallBuffer)
-	buf := iobuf.NewSmallBuffer()
-
-	b.ResetTimer()
-	for i := range b.N {
-		pool.SetValue(i%1024, buf)
+	pool, slots := benchmarkOwnedBuffers(b)
+	buf := iobuf.SmallBuffer{1: 1}
+	var i int
+	for b.Loop() {
+		buf[0]++
+		pool.SetValue(slots[i%len(slots)], buf)
+		i++
+	}
+	if pool.Value(slots[(i-1)%len(slots)]) != buf {
+		b.Fatal("stored buffer differs from the supplied value")
 	}
 }
 
@@ -293,28 +320,48 @@ func BenchmarkBufferTier_Size(b *testing.B) {
 // Sequential (single-threaded) pool benchmarks for baseline comparison
 
 func BenchmarkPool_Sequential_GetPut(b *testing.B) {
-	pool := iobuf.NewSmallBufferPool(1024)
-	pool.Fill(iobuf.NewSmallBuffer)
-
-	b.ResetTimer()
-	for range b.N {
-		idx, _ := pool.Get()
-		_ = pool.Put(idx)
-	}
+	benchmarkSequentialGetPut(b, false)
 }
 
 func BenchmarkPool_Sequential_GetPut_Nonblocking(b *testing.B) {
+	benchmarkSequentialGetPut(b, true)
+}
+
+func BenchmarkPool_Sequential_GetPut_NonblockingChannel(b *testing.B) {
+	slots := make(chan int, 1024)
+	for index := range cap(slots) {
+		slots <- index
+	}
+	b.ResetTimer()
+	for range b.N {
+		var index int
+		select {
+		case index = <-slots:
+		default:
+			b.Fatal("empty index channel")
+		}
+		select {
+		case slots <- index:
+		default:
+			b.Fatal("full index channel")
+		}
+	}
+}
+
+func benchmarkSequentialGetPut(b *testing.B, nonblocking bool) {
 	pool := iobuf.NewSmallBufferPool(1024)
 	pool.Fill(iobuf.NewSmallBuffer)
-	pool.SetNonblock(true)
+	pool.SetNonblock(nonblocking)
 
 	b.ResetTimer()
 	for range b.N {
-		idx, err := pool.Get()
+		index, err := pool.Get()
 		if err != nil {
-			continue
+			b.Fatal(err)
 		}
-		_ = pool.Put(idx)
+		if err := pool.Put(index); err != nil {
+			b.Fatal(err)
+		}
 	}
 }
 

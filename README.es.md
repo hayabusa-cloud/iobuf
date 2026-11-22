@@ -2,6 +2,7 @@
 
 [![Go Reference](https://pkg.go.dev/badge/code.hybscloud.com/iobuf.svg)](https://pkg.go.dev/code.hybscloud.com/iobuf)
 [![codecov](https://codecov.io/gh/hayabusa-cloud/iobuf/branch/main/graph/badge.svg)](https://codecov.io/gh/hayabusa-cloud/iobuf)
+[![Benchmarks](https://github.com/hayabusa-cloud/iobuf/actions/workflows/benchmarks.yml/badge.svg)](https://github.com/hayabusa-cloud/iobuf/actions/workflows/benchmarks.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Pools de buffers acotados sin bloqueos y eficientes en memoria para Go, optimizados para sistemas de baja latencia.
@@ -164,6 +165,8 @@ La implementación del pool acotado se basa en algoritmos de colas sin bloqueos:
 
 - **Eficiente en memoria**: Espacio O(n) para pool de capacidad n
 - **Amigable con caché**: Minimiza el false sharing y el rebote de líneas de caché
+
+[Medición del rendimiento del pool](BENCHMARKS.md)
 
 ## Referencias
 

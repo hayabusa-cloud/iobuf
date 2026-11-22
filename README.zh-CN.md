@@ -2,6 +2,7 @@
 
 [![Go Reference](https://pkg.go.dev/badge/code.hybscloud.com/iobuf.svg)](https://pkg.go.dev/code.hybscloud.com/iobuf)
 [![codecov](https://codecov.io/gh/hayabusa-cloud/iobuf/branch/main/graph/badge.svg)](https://codecov.io/gh/hayabusa-cloud/iobuf)
+[![Benchmarks](https://github.com/hayabusa-cloud/iobuf/actions/workflows/benchmarks.yml/badge.svg)](https://github.com/hayabusa-cloud/iobuf/actions/workflows/benchmarks.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 面向低延迟系统优化的无锁、内存友好型有界缓冲池。
@@ -164,6 +165,8 @@ func IoVecAddrLen(vec []IoVec) (addr uintptr, n int)
 
 - **内存高效**：n 容量池的 O(n) 空间复杂度
 - **缓存友好**：最小化伪共享和缓存行抖动
+
+[测量缓冲池性能](BENCHMARKS.md)
 
 ## 参考文献
 

@@ -2,6 +2,7 @@
 
 [![Go Reference](https://pkg.go.dev/badge/code.hybscloud.com/iobuf.svg)](https://pkg.go.dev/code.hybscloud.com/iobuf)
 [![codecov](https://codecov.io/gh/hayabusa-cloud/iobuf/branch/main/graph/badge.svg)](https://codecov.io/gh/hayabusa-cloud/iobuf)
+[![Benchmarks](https://github.com/hayabusa-cloud/iobuf/actions/workflows/benchmarks.yml/badge.svg)](https://github.com/hayabusa-cloud/iobuf/actions/workflows/benchmarks.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Pools de buffers bornés sans verrou et économes en mémoire pour Go, optimisés pour les systèmes à faible latence.
@@ -164,6 +165,8 @@ L'implémentation du pool borné est basée sur des algorithmes de files sans ve
 
 - **Efficace en mémoire** : Espace O(n) pour un pool de capacité n
 - **Compatible cache** : Minimise le faux partage et le rebond de lignes de cache
+
+[Mesurer les performances du pool](BENCHMARKS.md)
 
 ## Références
 

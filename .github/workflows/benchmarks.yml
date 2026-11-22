@@ -1,0 +1,28 @@
+name: Benchmarks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  benchmarks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GOTOOLCHAIN: local
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.27.x'
+      - name: Run pool benchmarks
+        run: |
+          go version
+          uname -srm
+          go test -run '^$' -bench '^BenchmarkPool(ReadBurst|WaitForReturn|_Sequential_GetPut_Nonblocking(Channel)?)$' -benchmem -benchtime=200ms -count=10 -cpu=1 -timeout=120s .
