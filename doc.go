@@ -33,34 +33,28 @@
 //
 // # Bounded Pool
 //
-// BoundedPool is a lock-free multi-producer multi-consumer (MPMC) pool based on
-// the algorithm from "A Scalable, Portable, and Memory-Efficient Lock-Free FIFO
-// Queue" (Ruslan Nikolaev, 2019). Key characteristics:
-//
-//   - Lock-free: Uses atomic CAS operations, no mutexes
-//   - Bounded: Fixed capacity rounded to power of two
-//   - Memory-efficient: Single contiguous array, no per-element allocation
-//   - Cache-optimized: Slot remapping spreads adjacent cursors across cache lines
+// BoundedPool uses a multi-producer multi-consumer (MPMC) index queue based on
+// "A Scalable, Portable, and Memory-Efficient Lock-Free FIFO Queue" (Ruslan
+// Nikolaev, 2019). Capacity rounds up to a power of two. The queue stores
+// indices separately from the items and updates entries with atomic
+// compare-and-swap. Slot remapping spreads adjacent cursors across cache lines.
 //
 // # Indirect Pool Pattern
 //
-// Pools store indices (int) rather than buffer values directly. This enables:
+// Get and Put transfer slot indices. Value returns the item by value. For a
+// fixed-size buffer such as SmallBuffer, use SetValue to store a modified copy.
 //
-//   - Zero-copy access via Value(indirect) method
-//   - Efficient pool operations without moving large buffers
-//   - Clear ownership semantics through index hand-off
+//	pool := NewSmallBufferPool(100)
+//	pool.Fill(NewSmallBuffer)
+//	idx, _ := pool.Get() // The freshly filled pool has an available slot.
+//	buf := pool.Value(idx)
+//	buf[0] = 1
+//	pool.SetValue(idx, buf)
+//	pool.Put(idx)
 //
-// Usage pattern:
-//
-//	pool := NewSmallBufferPool(100) // Creates pool with ~128 capacity
-//	pool.Fill(NewSmallBuffer)       // Initialize with buffer factory
-//	idx, _ := pool.Get()            // Acquire buffer index; default mode blocks
-//	buf := pool.Value(idx)          // Access buffer by index
-//	// Use buf[:]...
-//	pool.Put(idx)                   // Return buffer to pool
-//
-// Call SetNonblock(true) during initialization if empty/full frontiers should
-// return iox.ErrWouldBlock instead of waiting.
+// To work on pooled bytes in place, fill a BoundedPool[[]byte] with a distinct
+// backing buffer for each slot. Return the index once all application and
+// kernel access to its bytes has ended.
 //
 // # Page-Aligned Memory
 //
@@ -86,12 +80,13 @@
 //
 // # Thread Safety
 //
-// All pool operations are safe for concurrent use. BoundedPool supports multiple
-// concurrent producers and consumers without external synchronization.
+// Fill the pool and configure its mode before sharing it. Multiple goroutines
+// can then call Get and Put concurrently. In nonblocking mode an empty Get
+// or full Put returns iox.ErrWouldBlock. Either mode may retry a contended
+// queue update.
 //
 // # Dependencies
 //
-// iobuf depends on:
-//   - iox: Semantic error types (ErrWouldBlock, ErrMore)
-//   - spin: Spinlock and spin-wait primitives for backpressure
+// iox supplies ErrWouldBlock for nonblocking calls and Backoff for blocking
+// waits on an empty or full pool. spin supplies Wait for index queue contention.
 package iobuf

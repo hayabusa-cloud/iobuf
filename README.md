@@ -2,6 +2,7 @@
 
 [![Go Reference](https://pkg.go.dev/badge/code.hybscloud.com/iobuf.svg)](https://pkg.go.dev/code.hybscloud.com/iobuf)
 [![codecov](https://codecov.io/gh/hayabusa-cloud/iobuf/branch/main/graph/badge.svg)](https://codecov.io/gh/hayabusa-cloud/iobuf)
+[![Benchmarks](https://github.com/hayabusa-cloud/iobuf/actions/workflows/benchmarks.yml/badge.svg)](https://github.com/hayabusa-cloud/iobuf/actions/workflows/benchmarks.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Lock-free, memory-friendly bounded buffer pools for Go optimized for low-latency systems.
@@ -13,8 +14,10 @@ English | [简体中文](README.zh-CN.md) | [Español](README.es.md) | [日本�
 `iobuf` utilizes the **Spin** and **Adapt** layers of our performance ecosystem:
 
 1.  **Strike**: System call → Direct kernel hit.
-2.  **Spin**: Hardware yield (`spin`) → Local atomic synchronization.
-3.  **Adapt**: Software backoff (`iox.Backoff`) → External I/O readiness.
+2.  **Spin** uses `spin.Wait` to retry contended updates to the index queue in either mode.
+3.  **Adapt** uses `iox.Backoff` to sleep between retries when a blocking `Get` finds the pool empty or a blocking `Put` finds it full.
+
+Call `SetNonblock(true)` before sharing the pool to receive `iox.ErrWouldBlock` on an empty `Get` or a full `Put`.
 
 ## Features
 
@@ -41,23 +44,24 @@ go get code.hybscloud.com/iobuf
 ### Buffer Pools
 
 ```go
-// Create a pool of 1024 small buffers (2 KiB each)
-pool := iobuf.NewSmallBufferPool(1024)
-pool.Fill(iobuf.NewSmallBuffer)
+// Allocate a 2 KiB buffer for each slot.
+pool := iobuf.NewBoundedPool[[]byte](1024)
+pool.Fill(func() []byte { return make([]byte, iobuf.BufferSizeSmall) })
 
-// Acquire a buffer index
 idx, err := pool.Get()
 if err != nil {
-    panic(err)
+	panic(err)
 }
-
-// Access the buffer directly (zero-copy)
 buf := pool.Value(idx)
-...
+buf[0] = 1
 
-// Return to pool
-pool.Put(idx)
+// Return the index once, after all application and kernel access to buf has ended.
+if err := pool.Put(idx); err != nil {
+	panic(err)
+}
 ```
+
+The slice shares the slot’s bytes. With `NewSmallBufferPool`, `Value` returns an array copy. Use `SetValue` to write a modified array back to the slot.
 
 ### Page-Aligned Memory
 
@@ -113,7 +117,7 @@ type Pool[T any] interface {
     Get() (item T, err error)
 }
 
-// Index-based pool for zero-copy buffer access
+// Index-based pool for fixed-size buffer arrays
 type IndirectPool[T BufferType] interface {
     Pool[int]
     Value(indirect int) T
@@ -166,8 +170,9 @@ func IoVecAddrLen(vec []IoVec) (addr uintptr, n int)
 The bounded pool implementation is based on lock-free queue algorithms:
 
 - **Memory-efficient**: O(n) space for n-capacity pool
-- **Lock-free progress**: Guaranteed global progress bounds
 - **Cache-friendly**: Minimizes false sharing and cache-line bouncing
+
+[Measuring pool performance](BENCHMARKS.md)
 
 ## References
 

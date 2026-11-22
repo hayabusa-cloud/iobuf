@@ -162,27 +162,13 @@ func NewBoundedPool[ItemType BoundedPoolItem](capacity int) *BoundedPool[ItemTyp
 	return &ret
 }
 
-// BoundedPool is a generic type that represents a bounded pool of items of type T.
-// The pool has a bounded and fixed capacity and allows items to be retrieved and returned.
-// If the pool is empty and the non-blocking mode is not set,
-// Get() calls would block until an item is available.
-// If the pool is full and the non-blocking mode is not set,
-// Put() calls would block until the BoundedPool is no longer full.
-// BoundedPool is safe for concurrent use.
-// The Get() and Put() methods ensure that at least one of the goroutines makes progress.
-// The implementation of BoundedPool is based on the algorithms in the following paper:
+// BoundedPool is a fixed-capacity pool of items addressed by index.
+// After initialization, multiple goroutines can acquire and return indices
+// concurrently. Each caller controls its slot until it returns the index.
 //
-//	https://nikitakoval.org/publications/ppopp20-queues.pdf
+// The index queue is based on [Restricted Memory-Friendly Lock-Free Bounded Queues].
 //
-// Usage:
-//
-//	pool := NewBoundedPool[ItemType](capacity) creates a new instance of BoundedPool with the specified capacity.
-//	pool.Fill(newFunc) initializes and fills the pool with a function to create new items.
-//	pool.SetNonblock(nonblocking) enables or disables the non-blocking mode of the pool.
-//	pool.Value(indirect) returns the item at the specified indirect index.
-//	pool.SetValue(indirect, val) sets the value of the item at the specified indirect index in pool.
-//	pool.Get() retrieves an item from the pool and returns its indirect index.
-//	pool.Put(indirect) puts the indirect index of an item back into the pool.
+// [Restricted Memory-Friendly Lock-Free Bounded Queues]: https://nikitakoval.org/publications/ppopp20-queues.pdf
 type BoundedPool[T BoundedPoolItem] struct {
 	_ noCopy
 
@@ -198,17 +184,8 @@ type BoundedPool[T BoundedPoolItem] struct {
 	nonblocking bool
 }
 
-// Fill initializes and fills the BoundedPool with a newFunc function, which is used to create new items.
-// Fill Put capacity items with new BoundedPoolItem created by newFunc for each item in the pool.
-//
-// Example:
-//
-//	pool := NewBoundedPool[ItemType](capacity)
-//	pool.Fill(newFunc)
-//
-// Parameters:
-//
-//	newFunc - a function that returns an instance of an item to be added to the pool.
+// Fill initializes each slot with one call to newFunc.
+// Call Fill once before sharing the pool or acquiring its first slot.
 func (pool *BoundedPool[T]) Fill(newFunc func() T) {
 	for range pool.capacity {
 		pool.items = append(pool.items, newFunc())
@@ -220,28 +197,17 @@ func (pool *BoundedPool[T]) Fill(newFunc func() T) {
 	pool.tail.Store(pool.capacity)
 }
 
-// SetNonblock enables or disables the non-blocking mode of the pool.
-// When nonblocking is set to true, Get() and Put() calls will not block and return immediately.
-// When nonblocking is set to false, Get() calls will block until an item is available,
-// and Put() calls will block until the pool is no longer full.
-//
-// Example:
-//
-//	pool := NewBoundedPool[ItemType](capacity)
-//	pool.SetNonblock(true)
-//
-// SetNonblock must be called during the initialization phase, before
-// the pool is shared across goroutines. It is not safe for concurrent use.
-//
-// Parameters:
-//
-//	nonblocking - determines whether the pool operates in non-blocking mode (true) or blocking mode (false).
+// SetNonblock selects how Get handles an empty pool and Put handles a full pool.
+// The default is to wait. In nonblocking mode both methods return
+// [iox.ErrWouldBlock] in those cases.
+// Both modes retry contended queue updates with [spin.Wait].
+// Configure the mode before sharing the pool.
 func (pool *BoundedPool[T]) SetNonblock(nonblocking bool) {
 	pool.nonblocking = nonblocking
 }
 
-// Value returns the item at the specified indirect index.
-// The given indirect index must not be marked as empty and must be within the valid range.
+// Value returns the item at the caller's acquired index by value. An array is
+// copied. A slice shares its backing array with the item in the pool.
 func (pool *BoundedPool[T]) Value(indirect int) T {
 	if len(pool.items) != int(pool.capacity) {
 		panic("must Fill the pool before using it")
@@ -256,8 +222,7 @@ func (pool *BoundedPool[T]) Value(indirect int) T {
 	return pool.items[indirect]
 }
 
-// SetValue sets the value of the item at the specified indirect index in the BoundedPool.
-// The given indirect index must not be marked as empty and must be within the valid range.
+// SetValue replaces the item at the caller's acquired index.
 func (pool *BoundedPool[T]) SetValue(indirect int, value T) {
 	if len(pool.items) != int(pool.capacity) {
 		panic("must Fill the pool before using it")
@@ -272,14 +237,9 @@ func (pool *BoundedPool[T]) SetValue(indirect int, value T) {
 	pool.items[indirect] = value
 }
 
-// Get retrieves an item from the pool and returns its indirect index.
-// If an item is available, its indirect index and a nil error are returned.
-// Returns iox.ErrWouldBlock if the pool is empty and nonblocking mode is set.
-//
-// In blocking mode, Get uses adaptive waiting (iox.Backoff) when the
-// pool is empty. This acknowledges that buffer exhaustion is an external I/O
-// event—buffers are released when the kernel/network finishes processing—
-// requiring OS-level sleep rather than hardware-level spin.
+// Get acquires a slot and returns its index. When the pool is empty, Get waits
+// with [iox.Backoff] in blocking mode and returns [iox.ErrWouldBlock] in
+// nonblocking mode. Use the index only when Get succeeds.
 func (pool *BoundedPool[T]) Get() (indirect int, err error) {
 	if len(pool.items) != int(pool.capacity) {
 		panic("must Fill the pool before using it")
@@ -290,26 +250,17 @@ func (pool *BoundedPool[T]) Get() (indirect int, err error) {
 		if err == nil {
 			return int(entry & uint64(pool.mask)), nil
 		}
-		// tryGet only returns ErrWouldBlock on empty pool
 		if pool.nonblocking {
 			return boundedPoolEntryEmpty, err
 		}
-		// Buffer exhaustion: external I/O scale event.
-		// Use adaptive waiting to yield CPU while waiting for
-		// network/disk completion to release buffers.
 		aw.Wait()
 	}
 }
 
-// Put puts the indirect index of an item back into the BoundedPool.
-// It tries to put the given indirect index into the pool and returns
-// nil error if successful. If the BoundedPool is currently full, it
-// would block until the item can be put into the pool or return
-// iox.ErrWouldBlock if the pool is nonblocking.
-//
-// In blocking mode, Put uses adaptive waiting (iox.Backoff) when the
-// pool is full. This acknowledges that pool capacity is freed by external
-// consumers completing their I/O operations.
+// Put returns an acquired index. Return it once, after all application and
+// kernel access to the slot has ended. When the pool is full, Put waits with
+// [iox.Backoff] in blocking mode and returns [iox.ErrWouldBlock] in nonblocking
+// mode. An unsuccessful Put leaves the slot with its caller.
 func (pool *BoundedPool[T]) Put(indirect int) error {
 	if len(pool.items) != int(pool.capacity) {
 		panic("must Fill the pool before using it")
@@ -321,13 +272,9 @@ func (pool *BoundedPool[T]) Put(indirect int) error {
 		if err == nil {
 			return nil
 		}
-		// tryPut only returns ErrWouldBlock on full pool
 		if pool.nonblocking {
 			return err
 		}
-		// Pool full: external consumer scale event.
-		// Use adaptive waiting to yield CPU while waiting for
-		// consumers to complete their operations.
 		aw.Wait()
 	}
 }

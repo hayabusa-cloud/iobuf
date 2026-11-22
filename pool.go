@@ -22,30 +22,16 @@ type Pool[T any] interface {
 	Get() (item T, err error)
 }
 
-// IndirectPool manages items by index rather than by value, enabling
-// zero-copy access to pooled buffers.
-//
-// The pool stores buffer indices (int) rather than buffer values directly.
-// This design allows:
-//   - Zero-copy buffer access via Value() without moving large buffers
-//   - Efficient pool operations (only small integers are enqueued/dequeued)
-//   - Clear ownership semantics through index hand-off
-//
-// Usage pattern:
-//
-//	idx, _ := pool.Get()     // Acquire buffer index
-//	buf := pool.Value(idx)   // Access buffer by index
-//	// Use buf[:]...
-//	pool.Put(idx)            // Return buffer to pool
+// IndirectPool manages fixed-size buffer arrays by index. A successful Get
+// gives the caller one slot. Return its index once with Put after all use of
+// the slot has ended.
 type IndirectPool[T BufferType] interface {
 	Pool[int]
 
-	// Value returns the buffer associated with the given indirect index.
-	// The caller must have acquired this index via Get.
+	// Value returns a copy of the array at the caller's acquired index.
 	Value(indirect int) T
 
-	// SetValue updates the buffer at the specified indirect index.
-	// The caller must have acquired this index via Get.
+	// SetValue stores the array at the caller's acquired index.
 	SetValue(indirect int, item T)
 }
 
