@@ -1,7 +1,6 @@
 # iobuf
 
 [![Go Reference](https://pkg.go.dev/badge/code.hybscloud.com/iobuf.svg)](https://pkg.go.dev/code.hybscloud.com/iobuf)
-[![Go Report Card](https://goreportcard.com/badge/github.com/hayabusa-cloud/iobuf)](https://goreportcard.com/report/github.com/hayabusa-cloud/iobuf)
 [![codecov](https://codecov.io/gh/hayabusa-cloud/iobuf/branch/main/graph/badge.svg)](https://codecov.io/gh/hayabusa-cloud/iobuf)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -26,7 +25,7 @@
 
 ## システム要件
 
-- **Go 1.26+**
+- **Go 1.27+**
 - **64ビットCPU**（amd64、arm64、riscv64、loong64、ppc64、s390x、mips64など）
 
 > **注意：** ロックフリープール実装で64ビットアトミック操作を使用しているため、32ビットアーキテクチャはサポートされていません。

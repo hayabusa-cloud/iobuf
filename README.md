@@ -1,7 +1,6 @@
 # iobuf
 
 [![Go Reference](https://pkg.go.dev/badge/code.hybscloud.com/iobuf.svg)](https://pkg.go.dev/code.hybscloud.com/iobuf)
-[![Go Report Card](https://goreportcard.com/badge/github.com/hayabusa-cloud/iobuf)](https://goreportcard.com/report/github.com/hayabusa-cloud/iobuf)
 [![codecov](https://codecov.io/gh/hayabusa-cloud/iobuf/branch/main/graph/badge.svg)](https://codecov.io/gh/hayabusa-cloud/iobuf)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -26,7 +25,7 @@ English | [简体中文](README.zh-CN.md) | [Español](README.es.md) | [日本�
 
 ## Requirements
 
-- **Go 1.26+**
+- **Go 1.27+**
 - **64-bit CPU** (amd64, arm64, riscv64, loong64, ppc64, s390x, mips64, etc.)
 
 > **Note:** 32-bit architectures are not supported due to 64-bit atomic operations in the lock-free pool implementation.

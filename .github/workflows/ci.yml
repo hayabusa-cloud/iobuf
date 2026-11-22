@@ -6,17 +6,23 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  GOTOOLCHAIN: local
+
 jobs:
-  test:
-    name: Test
+  tests:
+    name: Test (Go ${{ matrix.go-version }})
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ['1.27.x', 'stable']
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
-          go-version: '1.26.x'
+          go-version: ${{ matrix.go-version }}
           cache: true
 
       - name: Format check
@@ -32,11 +38,20 @@ jobs:
         run: go test -timeout 120s -race -coverprofile=coverage.out -covermode=atomic ./...
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        if: matrix.go-version == '1.27.x'
+        uses: codecov/codecov-action@v7
         with:
           files: coverage.out
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  test:
+    name: Test
+    needs: tests
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: test "${{ needs.tests.result }}" = success
 
   cross-build:
     name: Cross-Build (${{ matrix.goos }}/${{ matrix.goarch }})
@@ -56,12 +71,12 @@ jobs:
           - { goos: linux, goarch: s390x }
           - { goos: linux, goarch: mips64 }
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
-          go-version: '1.26.x'
+          go-version: '1.27.x'
           cache: true
 
       - name: Build

@@ -1,7 +1,6 @@
 # iobuf
 
 [![Go Reference](https://pkg.go.dev/badge/code.hybscloud.com/iobuf.svg)](https://pkg.go.dev/code.hybscloud.com/iobuf)
-[![Go Report Card](https://goreportcard.com/badge/github.com/hayabusa-cloud/iobuf)](https://goreportcard.com/report/github.com/hayabusa-cloud/iobuf)
 [![codecov](https://codecov.io/gh/hayabusa-cloud/iobuf/branch/main/graph/badge.svg)](https://codecov.io/gh/hayabusa-cloud/iobuf)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -26,7 +25,7 @@ Pools de buffers bornés sans verrou et économes en mémoire pour Go, optimisé
 
 ## Prérequis
 
-- **Go 1.26+**
+- **Go 1.27+**
 - **CPU 64 bits** (amd64, arm64, riscv64, loong64, ppc64, s390x, mips64, etc.)
 
 > **Note :** Les architectures 32 bits ne sont pas prises en charge en raison des opérations atomiques 64 bits dans l'implémentation du pool sans verrou.
