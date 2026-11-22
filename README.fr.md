@@ -13,8 +13,10 @@ Pools de buffers bornés sans verrou et économes en mémoire pour Go, optimisé
 `iobuf` utilise les couches **Spin** et **Adapt** de notre écosystème de performance :
 
 1.  **Strike** : Appel système → Impact direct au noyau.
-2.  **Spin** : Cession matérielle (`spin`) → Synchronisation atomique locale.
-3.  **Adapt** : Recul logiciel (`iox.Backoff`) → Préparation I/O externe.
+2.  **Spin** utilise `spin.Wait` dans les deux modes pour réessayer une mise à jour de la file d’indices en cas de contention.
+3.  **Adapt** utilise `iox.Backoff` pour suspendre la goroutine entre les tentatives quand, en mode bloquant, `Get` trouve le pool vide ou `Put` le trouve plein.
+
+Appelez `SetNonblock(true)` avant de partager le pool. Ainsi, `Get` renvoie `iox.ErrWouldBlock` si le pool est vide et `Put` renvoie la même erreur s’il est plein.
 
 ## Caractéristiques
 
@@ -41,23 +43,24 @@ go get code.hybscloud.com/iobuf
 ### Pools de Buffers
 
 ```go
-// Créer un pool de 1024 petits buffers (2 Kio chacun)
-pool := iobuf.NewSmallBufferPool(1024)
-pool.Fill(iobuf.NewSmallBuffer)
+// Allouer un buffer de 2 Kio par emplacement.
+pool := iobuf.NewBoundedPool[[]byte](1024)
+pool.Fill(func() []byte { return make([]byte, iobuf.BufferSizeSmall) })
 
-// Acquérir un index de buffer
 idx, err := pool.Get()
 if err != nil {
-    panic(err)
+	panic(err)
 }
-
-// Accéder au buffer directement (sans copie)
 buf := pool.Value(idx)
-...
+buf[0] = 1
 
-// Retourner au pool
-pool.Put(idx)
+// Rendre l’indice une seule fois, quand l’application et le noyau ont fini d’utiliser buf.
+if err := pool.Put(idx); err != nil {
+	panic(err)
+}
 ```
+
+Le slice partage les octets de cet emplacement. Avec `NewSmallBufferPool`, `Value` renvoie une copie du tableau. Utilisez `SetValue` pour enregistrer le tableau modifié dans son emplacement.
 
 ### Mémoire Alignée sur Page
 
@@ -113,7 +116,7 @@ type Pool[T any] interface {
     Get() (item T, err error)
 }
 
-// Pool basé sur index pour accès aux buffers sans copie
+// Pool de tableaux de taille fixe gérés par indice
 type IndirectPool[T BufferType] interface {
     Pool[int]
     Value(indirect int) T
@@ -160,7 +163,6 @@ func IoVecAddrLen(vec []IoVec) (addr uintptr, n int)
 L'implémentation du pool borné est basée sur des algorithmes de files sans verrou :
 
 - **Efficace en mémoire** : Espace O(n) pour un pool de capacité n
-- **Progression sans verrou** : Bornes de progression globale garanties
 - **Compatible cache** : Minimise le faux partage et le rebond de lignes de cache
 
 ## Références

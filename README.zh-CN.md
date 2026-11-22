@@ -13,8 +13,10 @@
 `iobuf` 使用我们性能生态系统中的 **Spin** 和 **Adapt** 层：
 
 1.  **Strike**：系统调用 → 直接内核命中。
-2.  **Spin**：硬件让步 (`spin`) → 本地原子同步。
-3.  **Adapt**：软件退避 (`iox.Backoff`) → 外部 I/O 就绪。
+2.  **Spin** 在两种模式下都使用 `spin.Wait` 重试因竞争而未能完成的索引队列更新。
+3.  **Adapt** 用于阻塞模式。池为空时的 `Get` 和池已满时的 `Put` 都使用 `iox.Backoff` 在重试前休眠。
+
+在共享池之前调用 `SetNonblock(true)`。这样，池为空时 `Get` 返回 `iox.ErrWouldBlock`，池已满时 `Put` 返回同样的错误。
 
 ## 特性
 
@@ -41,23 +43,24 @@ go get code.hybscloud.com/iobuf
 ### 缓冲池
 
 ```go
-// 创建包含 1024 个小缓冲区的池（每个 2 KiB）
-pool := iobuf.NewSmallBufferPool(1024)
-pool.Fill(iobuf.NewSmallBuffer)
+// 为每个槽位分配一个 2 KiB 的缓冲区。
+pool := iobuf.NewBoundedPool[[]byte](1024)
+pool.Fill(func() []byte { return make([]byte, iobuf.BufferSizeSmall) })
 
-// 获取缓冲区索引
 idx, err := pool.Get()
 if err != nil {
-    panic(err)
+	panic(err)
 }
-
-// 直接访问缓冲区（零拷贝）
 buf := pool.Value(idx)
-...
+buf[0] = 1
 
-// 归还到池
-pool.Put(idx)
+// 等应用程序和内核都用完 buf 后，将索引归还一次。
+if err := pool.Put(idx); err != nil {
+	panic(err)
+}
 ```
+
+这个切片与槽位共享底层字节。使用 `NewSmallBufferPool` 时，`Value` 返回数组的副本。修改后可用 `SetValue` 将数组写回槽位。
 
 ### 页对齐内存
 
@@ -113,7 +116,7 @@ type Pool[T any] interface {
     Get() (item T, err error)
 }
 
-// 基于索引的池，用于零拷贝缓冲区访问
+// 通过索引管理定长缓冲区数组的池
 type IndirectPool[T BufferType] interface {
     Pool[int]
     Value(indirect int) T
@@ -160,7 +163,6 @@ func IoVecAddrLen(vec []IoVec) (addr uintptr, n int)
 有界池实现基于无锁队列算法：
 
 - **内存高效**：n 容量池的 O(n) 空间复杂度
-- **无锁进展**：保证全局进展边界
 - **缓存友好**：最小化伪共享和缓存行抖动
 
 ## 参考文献

@@ -13,8 +13,10 @@ Pools de buffers acotados sin bloqueos y eficientes en memoria para Go, optimiza
 `iobuf` utiliza las capas **Spin** y **Adapt** de nuestro ecosistema de rendimiento:
 
 1.  **Strike**: Llamada al sistema → Impacto directo al kernel.
-2.  **Spin**: Cesión de hardware (`spin`) → Sincronización atómica local.
-3.  **Adapt**: Retroceso de software (`iox.Backoff`) → Preparación de I/O externa.
+2.  **Spin** usa `spin.Wait` en ambos modos para reintentar las actualizaciones de la cola de índices cuando hay contención.
+3.  **Adapt** usa `iox.Backoff` para hacer una pausa entre reintentos cuando, en modo bloqueante, `Get` encuentra el pool vacío o `Put` lo encuentra lleno.
+
+Llama a `SetNonblock(true)` antes de compartir el pool para que `Get` devuelva `iox.ErrWouldBlock` si está vacío y `Put` devuelva el mismo error si está lleno.
 
 ## Características
 
@@ -41,23 +43,24 @@ go get code.hybscloud.com/iobuf
 ### Pools de Buffers
 
 ```go
-// Crear un pool de 1024 buffers pequeños (2 KiB cada uno)
-pool := iobuf.NewSmallBufferPool(1024)
-pool.Fill(iobuf.NewSmallBuffer)
+// Asignar un buffer de 2 KiB por posición.
+pool := iobuf.NewBoundedPool[[]byte](1024)
+pool.Fill(func() []byte { return make([]byte, iobuf.BufferSizeSmall) })
 
-// Adquirir un índice de buffer
 idx, err := pool.Get()
 if err != nil {
-    panic(err)
+	panic(err)
 }
-
-// Acceder al buffer directamente (sin copia)
 buf := pool.Value(idx)
-...
+buf[0] = 1
 
-// Devolver al pool
-pool.Put(idx)
+// Devolver el índice una sola vez, cuando la aplicación y el kernel hayan terminado de usar buf.
+if err := pool.Put(idx); err != nil {
+	panic(err)
+}
 ```
+
+El slice comparte los bytes de esa posición. Con `NewSmallBufferPool`, `Value` devuelve una copia del array. Usa `SetValue` para guardar el array modificado en su posición.
 
 ### Memoria Alineada a Página
 
@@ -113,7 +116,7 @@ type Pool[T any] interface {
     Get() (item T, err error)
 }
 
-// Pool basado en índices para acceso a buffers sin copia
+// Pool de arrays de tamaño fijo gestionados por índice
 type IndirectPool[T BufferType] interface {
     Pool[int]
     Value(indirect int) T
@@ -160,7 +163,6 @@ func IoVecAddrLen(vec []IoVec) (addr uintptr, n int)
 La implementación del pool acotado se basa en algoritmos de colas sin bloqueos:
 
 - **Eficiente en memoria**: Espacio O(n) para pool de capacidad n
-- **Progreso sin bloqueos**: Límites de progreso global garantizados
 - **Amigable con caché**: Minimiza el false sharing y el rebote de líneas de caché
 
 ## Referencias

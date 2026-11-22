@@ -13,8 +13,10 @@
 `iobuf` はパフォーマンスエコシステムの **Spin** と **Adapt** レイヤーを使用します：
 
 1.  **Strike**：システムコール → カーネルへの直接ヒット。
-2.  **Spin**：ハードウェアイールド (`spin`) → ローカルアトミック同期。
-3.  **Adapt**：ソフトウェアバックオフ (`iox.Backoff`) → 外部I/O準備完了。
+2.  **Spin** はどちらのモードでも、インデックスキューの更新が競合すると `spin.Wait` を使って再試行します。
+3.  **Adapt** はブロッキングモードで、プールが空のときの `Get` と満杯のときの `Put` に `iox.Backoff` を使い、再試行の間はスリープします。
+
+プールを共有する前に `SetNonblock(true)` を呼ぶと、空のプールに対する `Get` と満杯のプールに対する `Put` は `iox.ErrWouldBlock` を返します。
 
 ## 特徴
 
@@ -41,23 +43,24 @@ go get code.hybscloud.com/iobuf
 ### バッファプール
 
 ```go
-// 1024個のスモールバッファ（各2 KiB）のプールを作成
-pool := iobuf.NewSmallBufferPool(1024)
-pool.Fill(iobuf.NewSmallBuffer)
+// スロットごとに 2 KiB のバッファを確保する。
+pool := iobuf.NewBoundedPool[[]byte](1024)
+pool.Fill(func() []byte { return make([]byte, iobuf.BufferSizeSmall) })
 
-// バッファインデックスを取得
 idx, err := pool.Get()
 if err != nil {
-    panic(err)
+	panic(err)
 }
-
-// バッファに直接アクセス（ゼロコピー）
 buf := pool.Value(idx)
-...
+buf[0] = 1
 
-// プールに返却
-pool.Put(idx)
+// アプリケーションとカーネルがともに buf を使い終えてから、インデックスを一度だけ返す。
+if err := pool.Put(idx); err != nil {
+	panic(err)
+}
 ```
+
+このスライスはスロットと同じバイト列を参照します。`NewSmallBufferPool` の場合、`Value` は配列のコピーを返します。変更した配列は `SetValue` でスロットに書き戻します。
 
 ### ページアラインメモリ
 
@@ -113,7 +116,7 @@ type Pool[T any] interface {
     Get() (item T, err error)
 }
 
-// ゼロコピーバッファアクセス用のインデックスベースプール
+// 固定長のバッファ配列をインデックスで管理するプール
 type IndirectPool[T BufferType] interface {
     Pool[int]
     Value(indirect int) T
@@ -160,7 +163,6 @@ func IoVecAddrLen(vec []IoVec) (addr uintptr, n int)
 有界プールの実装はロックフリーキューアルゴリズムに基づいています：
 
 - **メモリ効率**：容量nのプールに対してO(n)空間
-- **ロックフリー進行**：グローバル進行境界を保証
 - **キャッシュフレンドリー**：フォルスシェアリングとキャッシュラインバウンシングを最小化
 
 ## 参考文献
